@@ -4,7 +4,9 @@
 スイング投資向けの日本株式テクニカル分析ツール。Flask + yfinance + Plotlyで構築。
 
 **現在のバージョン**: Phase 1 (基本実装完了)
-**稼働状況**: ✅ 動作確認済み
+**稼働状況**: 🚀 本番環境デプロイ済み
+**本番URL**: https://web-production-7ddba.up.railway.app
+**GitHubリポジトリ**: https://github.com/ibiza116/stock-analysis
 **開発環境**: Python仮想環境 (`myenv/`)
 
 ## プロジェクト構成
@@ -23,6 +25,10 @@ stock-analysis-tool/
 │   └── technical.py          # テクニカル分析（NaN対応済み）
 ├── utils/
 │   └── __init__.py
+├── wsgi.py                    # Gunicorn WSGI エントリーポイント
+├── Dockerfile                 # Railway デプロイ用
+├── railway.toml              # Railway 設定ファイル
+├── README.local.md           # ローカル開発用ドキュメント
 └── stock-analysis-tool-spec.md  # 元仕様書
 ```
 
@@ -132,6 +138,9 @@ http://localhost:5000
 1. **NaN値エラー**: RSI計算でNaN値が発生 → `_safe_float()`で対応
 2. **移動平均線表示**: データ不足時のグラフエラー → null値チェック追加
 3. **依存関係**: 固定バージョンによる互換性問題 → >=指定に変更
+4. **Railwayデプロイ**: nixpacksビルダーでpipエラー → Dockerfile使用に変更
+5. **ポート設定**: 固定ポートとPORT環境変数の競合 → 動的ポート対応
+6. **ヘルスチェック**: 起動確認失敗 → `/health`エンドポイント追加
 
 ### 注意事項
 - 東証銘柄は自動的に`.T`サフィックス追加
@@ -155,11 +164,43 @@ http://localhost:5000
 - Flaskのdebug=Trueで詳細エラー表示
 - print文でのデータ確認
 
+## デプロイメント
+
+### Railway本番環境
+- **URL**: https://web-production-7ddba.up.railway.app
+- **プラットフォーム**: Railway (Dockerベース)
+- **自動デプロイ**: GitHubプッシュ時に自動実行
+- **ヘルスチェック**: `/health` エンドポイント
+- **環境変数**: `PORT` (Railway自動設定)
+
+### デプロイ手順
+1. コード修正・テスト
+2. `git add .` → `git commit` → `git push origin main`
+3. Railwayが自動ビルド・デプロイ
+4. ヘルスチェック成功で公開完了
+
+### 本番環境設定
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+# gcc for numpy/pandas compilation
+# gunicorn with $PORT environment variable
+# logging enabled for debugging
+```
+
 ## 運用メモ
-- **本番環境**: debug=False設定必須
-- **セキュリティ**: 外部公開時はCSRF対策必須
-- **スケーリング**: Redis等でキャッシュ検討
+- **本番環境**: gunicornでproduction実行
+- **セキュリティ**: Railway HTTPS自動設定済み
+- **モニタリング**: Railwayダッシュボードでログ確認
+- **スケーリング**: 必要に応じてRailway Proプラン検討
+
+## 開発ワークフロー
+1. **ローカル開発**: `python app.py` (詳細はREADME.local.md参照)
+2. **テスト**: ブラウザで動作確認
+3. **デプロイ**: GitHubプッシュで自動デプロイ
+4. **確認**: 本番URLで動作確認
 
 ---
-**最終更新**: 2025-07-28
-**動作確認**: ✅ トヨタ(7203)で正常動作確認済み
+**最終更新**: 2025-07-31
+**動作確認**: 🚀 Railway本番環境で動作確認済み
+**本番URL**: https://web-production-7ddba.up.railway.app

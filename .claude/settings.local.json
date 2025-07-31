@@ -4,7 +4,12 @@
       "Bash(mkdir:*)",
       "Bash(python:*)",
       "Bash(chmod:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(myenv/Scripts/python.exe -m pip install:*)"
     ],
     "deny": []
   }
