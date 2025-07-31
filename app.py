@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+from flask_httpauth import HTTPBasicAuth
 from analyzers.data_fetcher import StockDataFetcher
 from analyzers.technical import TechnicalAnalyzer
 import json
@@ -7,7 +8,18 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 
+# Basic認証設定
+auth = HTTPBasicAuth()
+
+@auth.verify_password
+def verify_password(username, password):
+    # 環境変数から認証情報を取得
+    valid_username = os.environ.get('BASIC_AUTH_USERNAME', 'admin')
+    valid_password = os.environ.get('BASIC_AUTH_PASSWORD', 'password')
+    return username == valid_username and password == valid_password
+
 @app.route('/')
+@auth.login_required
 def index():
     return render_template('index.html')
 
@@ -16,6 +28,7 @@ def health():
     return jsonify({'status': 'healthy', 'message': 'Application is running'})
 
 @app.route('/analyze', methods=['POST'])
+@auth.login_required
 def analyze():
     try:
         data = request.json
