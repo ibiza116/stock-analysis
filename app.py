@@ -11,6 +11,10 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-produ
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy', 'message': 'Application is running'})
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
