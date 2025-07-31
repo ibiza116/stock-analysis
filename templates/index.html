@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株価分析ツール</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .input-section input, .input-section select, .input-section button {
+            margin: 5px;
+            padding: 8px;
+        }
+        .chart-container {
+            margin: 20px 0;
+        }
+        .signal-box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .buy-signal { background: #e8f5e9; color: #2e7d32; }
+        .sell-signal { background: #ffebee; color: #c62828; }
+        .loading { display: none; color: blue; }
+        .memo-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+        .memo-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .memo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .memo-table th {
+            background-color: #e8e8e8;
+            border: 1px solid #ccc;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+        .memo-table td {
+            border: 1px solid #ccc;
+            padding: 5px 8px;
+        }
+        .memo-table input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 5px;
+            font-size: 14px;
+        }
+        .memo-table input:focus {
+            background: white;
+            border: 1px solid #4CAF50;
+            outline: none;
+        }
+        .memo-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        .memo-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        .memo-status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .memo-status.saved {
+            color: #4CAF50;
+        }
+        .memo-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .memo-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <h1>株価分析ツール - スイング投資向け</h1>
+    
+    <div class="input-section">
+        <label for="ticker">銘柄コード（4桁）:</label>
+        <input type="text" id="ticker" placeholder="例: 7203（トヨタ）" maxlength="4" value="">
+        
+        <label for="period">期間:</label>
+        <select id="period">
+            <option value="3mo">3ヶ月</option>
+            <option value="6mo" selected>6ヶ月</option>
+            <option value="1y">1年</option>
+        </select>
+        
+        <button onclick="analyzeStock()">分析開始</button>
+        <span class="loading" id="loading">分析中...</span>
+    </div>
+    
+    <div class="memo-section">
+        <h3>📝 投資メモ一覧</h3>
+        <div class="memo-table-container">
+            <table class="memo-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">銘柄番号</th>
+                    <th style="width: 25%;">銘柄名</th>
+                    <th style="width: 60%;">メモ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="memo-status" id="memo-status">メモデータを読み込み中...</div>
+    </div>
+    
+    <div id="results" style="display: none;">
+        <div id="chart" class="chart-container"></div>
+        <div id="signals"></div>
+        <div id="golden-crosses"></div>
+    </div>
+    
+    <script>
+        async function analyzeStock() {
+            console.log('分析開始');
+            
+            const ticker = document.getElementById('ticker').value;
+            const period = document.getElementById('period').value;
+            
+            console.log('Ticker:', ticker, 'Period:', period);
+            
+            if (!ticker || ticker.length !== 4) {
+                alert('4桁の銘柄コードを入力してください');
+                return;
+            }
+            
+            const loadingElement = document.getElementById('loading');
+            loadingElement.style.display = 'inline';
+            
+            try {
+                console.log('APIリクエスト送信中...');
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker, 
+                        period: period
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (result.success) {
+                    displayResults(result.data);
+                } else {
+                    alert('エラー: ' + result.error);
+                    console.error('API Error:', result.error);
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                alert('通信エラーが発生しました: ' + error.message);
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        }
+        
+        function displayResults(data) {
+            console.log('結果表示開始', data);
+            
+            try {
+                document.getElementById('results').style.display = 'block';
+                
+                // チャート描画
+                if (data.chart_data) {
+                    const chartData = data.chart_data;
+                    const traces = [
+                        {
+                            x: chartData.dates,
+                            y: chartData.prices,
+                            type: 'scatter',
+                            name: '終値',
+                            line: {color: 'blue', width: 2}
+                        }
+                    ];
+                    
+                    // 移動平均線を追加（データがある場合）
+                    if (chartData.sma_25 && chartData.sma_25.some(v => v != null)) {
+                        traces.push({
+                            x: chartData.dates,
+                            y: chartData.sma_25,
+                            type: 'scatter',
+                            name: '25日移動平均',
+                            line: {color: 'green', width: 1}
+                        });
+                    }
+                    
+                    if (chartData.sma_75 && chartData.sma_75.some(v => v != null)) {
+                        traces.push({
+                            x: chartData.dates,
+                            y: chartData.sma_75,
+                            type: 'scatter',
+                            name: '75日移動平均',
+                            line: {color: 'red', width: 1}
+                        });
+                    }
+                    
+                    const layout = {
+                        title: '株価チャート',
+                        xaxis: {title: '日付'},
+                        yaxis: {title: '株価（円）'},
+                        height: 500
+                    };
+                    
+                    Plotly.newPlot('chart', traces, layout);
+                }
+                
+                // シグナル表示
+                const signalsDiv = document.getElementById('signals');
+                signalsDiv.innerHTML = '<h3>売買シグナル</h3>';
+                
+                if (data.signals && data.signals.length > 0) {
+                    data.signals.forEach(signal => {
+                        const div = document.createElement('div');
+                        div.className = `signal-box ${signal.type}-signal`;
+                        div.innerHTML = `${signal.type === 'buy' ? '買い' : '売り'}シグナル: ${signal.reason}`;
+                        signalsDiv.appendChild(div);
+                    });
+                } else {
+                    signalsDiv.innerHTML += '<p>現在、明確な売買シグナルはありません。</p>';
+                }
+                
+                // RSI表示
+                if (data.latest_rsi) {
+                    const rsiDiv = document.createElement('div');
+                    rsiDiv.innerHTML = `<p>現在のRSI: ${data.latest_rsi.toFixed(2)}</p>`;
+                    signalsDiv.appendChild(rsiDiv);
+                }
+                
+                console.log('結果表示完了');
+                
+            } catch (error) {
+                console.error('Display Error:', error);
+                alert('結果表示中にエラーが発生しました: ' + error.message);
+            }
+        }
+        
+        // メモデータのローカルストレージ管理
+        const MEMO_STORAGE_KEY = 'stock_analysis_memo_data';
+        
+        // メモデータを保存
+        function saveMemoData() {
+            const memoData = [];
+            const rows = document.querySelectorAll('.memo-table tbody tr');
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const ticker = inputs[0].value.trim();
+                const name = inputs[1].value.trim();
+                const memo = inputs[2].value.trim();
+                
+                if (ticker || name || memo) {
+                    memoData.push({
+                        ticker: ticker,
+                        name: name,
+                        memo: memo
+                    });
+                }
+            });
+            
+            try {
+                localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memoData));
+                updateMemoStatus('メモデータを保存しました', true);
+                console.log('メモデータ保存完了:', memoData);
+            } catch (error) {
+                console.error('メモデータ保存エラー:', error);
+                updateMemoStatus('保存エラーが発生しました', false);
+            }
+        }
+        
+        // メモデータを読み込み
+        function loadMemoData() {
+            try {
+                const savedData = localStorage.getItem(MEMO_STORAGE_KEY);
+                if (savedData) {
+                    const memoData = JSON.parse(savedData);
+                    const rows = document.querySelectorAll('.memo-table tbody tr');
+                    
+                    // データをテーブルに復元
+                    memoData.forEach((item, index) => {
+                        if (index < rows.length) {
+                            const inputs = rows[index].querySelectorAll('input');
+                            inputs[0].value = item.ticker || '';
+                            inputs[1].value = item.name || '';
+                            inputs[2].value = item.memo || '';
+                        }
+                    });
+                    
+                    updateMemoStatus(`${memoData.length}件のメモデータを読み込みました`, true);
+                    console.log('メモデータ読み込み完了:', memoData);
+                } else {
+                    updateMemoStatus('保存されたメモデータはありません', false);
+                }
+            } catch (error) {
+                console.error('メモデータ読み込みエラー:', error);
+                updateMemoStatus('読み込みエラーが発生しました', false);
+            }
+        }
+        
+        // ステータス表示を更新
+        function updateMemoStatus(message, isSuccess) {
+            const statusElement = document.getElementById('memo-status');
+            statusElement.textContent = message;
+            statusElement.className = isSuccess ? 'memo-status saved' : 'memo-status';
+            
+            // 3秒後にメッセージをクリア
+            setTimeout(() => {
+                statusElement.textContent = '';
+            }, 3000);
+        }
+        
+        // 入力フィールドに変更イベントリスナーを追加
+        function addMemoEventListeners() {
+            const inputs = document.querySelectorAll('.memo-table input');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    // 少し遅延させてから保存（連続入力時のパフォーマンス対策）
+                    clearTimeout(input.saveTimeout);
+                    input.saveTimeout = setTimeout(saveMemoData, 500);
+                });
+            });
+        }
+        
+        // ページ読み込み時の処理
+        window.addEventListener('load', function() {
+            console.log('ページ読み込み完了');
+            loadMemoData();
+            addMemoEventListeners();
+        });
+    </script>
+</body>
+</html>
