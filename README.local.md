@@ -26,13 +26,18 @@ source myenv/bin/activate
 # 4. 依存関係インストール
 pip install -r requirements.txt
 
-# 5. アプリケーション起動
+# 5. 環境設定ファイル作成（オプション）
+cp .env.example .env
+# .envファイルを編集してBasic認証情報を設定
+
+# 6. アプリケーション起動
 python app.py
 ```
 
 ### アクセス
 - **ローカル**: http://localhost:5000
 - **本番環境**: https://web-production-7ddba.up.railway.app
+  - **認証情報**: ユーザー名 `ibiza116` / パスワード `Masamune5nun`
 
 ## 📁 プロジェクト構成
 
@@ -63,11 +68,16 @@ stock-analysis/
 source myenv/bin/activate  # Linux/Mac
 # myenv\Scripts\activate   # Windows
 
+# 環境変数設定（Basic認証用）
+export BASIC_AUTH_USERNAME=admin
+export BASIC_AUTH_PASSWORD=password
+
 # 開発サーバー起動
 python app.py
 
 # ブラウザで確認
 # http://localhost:5000
+# Basic認証: admin / password
 ```
 
 ### 2. テスト
@@ -108,18 +118,44 @@ source myenv/bin/activate
 pip install -r requirements.txt
 ```
 
+## 🔐 Basic認証設定
+
+### 環境変数
+```bash
+# ローカル開発用
+BASIC_AUTH_USERNAME=admin      # デフォルト
+BASIC_AUTH_PASSWORD=password   # デフォルト
+
+# 本番環境（Railway）
+BASIC_AUTH_USERNAME=ibiza116
+BASIC_AUTH_PASSWORD=Masamune5nun
+```
+
+### 設定ファイル
+```bash
+# .env.example をコピーして設定
+cp .env.example .env
+
+# .env ファイルを編集
+BASIC_AUTH_USERNAME=your_username
+BASIC_AUTH_PASSWORD=your_password
+```
+
 ## 📊 API エンドポイント
 
-### `/` (GET)
+### `/` (GET) 🔐
 - **用途**: メインページ表示
+- **認証**: Basic認証必要
 - **レスポンス**: HTML
 
 ### `/health` (GET)
 - **用途**: ヘルスチェック（Railway用）
+- **認証**: 不要
 - **レスポンス**: `{"status": "healthy"}`
 
-### `/analyze` (POST)
+### `/analyze` (POST) 🔐
 - **用途**: 株価分析実行
+- **認証**: Basic認証必要
 - **リクエスト**: 
   ```json
   {
@@ -155,7 +191,20 @@ set PORT=5001     # Windows
 python app.py
 ```
 
-#### 4. チャートが表示されない
+#### 4. Basic認証エラー
+```bash
+# 認証情報が間違っている場合
+# 環境変数を確認
+echo $BASIC_AUTH_USERNAME
+echo $BASIC_AUTH_PASSWORD
+
+# デフォルト値使用
+unset BASIC_AUTH_USERNAME
+unset BASIC_AUTH_PASSWORD
+# admin / password でアクセス
+```
+
+#### 5. チャートが表示されない
 - **F12 → Console** でJavaScriptエラー確認
 - **データ期間**不足の可能性（RSIは14日必要）
 

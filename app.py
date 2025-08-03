@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 from flask_httpauth import HTTPBasicAuth
 from analyzers.data_fetcher import StockDataFetcher
 from analyzers.technical import TechnicalAnalyzer
+from analyzers.fundamental import FundamentalAnalyzer
 import json
 import os
 
@@ -40,12 +41,27 @@ def analyze():
         stock_data = fetcher.fetch_stock_data(ticker, period)
         
         # テクニカル分析
-        analyzer = TechnicalAnalyzer()
-        analysis = analyzer.analyze(stock_data)
+        technical_analyzer = TechnicalAnalyzer()
+        technical_analysis = technical_analyzer.analyze(stock_data)
+        
+        # ファンダメンタル分析
+        fundamental_analyzer = FundamentalAnalyzer()
+        fundamental_analysis = fundamental_analyzer.comprehensive_analysis(ticker, stock_data)
+        
+        # 結果統合
+        combined_analysis = {
+            'technical': technical_analysis,
+            'fundamental': fundamental_analysis,
+            'stock_info': {
+                'ticker': ticker,
+                'company_name': stock_data.get('company_name', ''),
+                'current_price': stock_data.get('current_price', 0)
+            }
+        }
         
         return jsonify({
             'success': True,
-            'data': analysis
+            'data': combined_analysis
         })
     except Exception as e:
         return jsonify({
