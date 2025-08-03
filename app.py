@@ -6,12 +6,32 @@ from analyzers.fundamental import FundamentalAnalyzer
 from analyzers.backtester import BacktestEngine
 from analyzers.strategies import StrategyManager
 from analyzers.performance import PerformanceAnalyzer
+from utils.database import db_manager
 import json
 import os
+import logging
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+
+# Basic認証設定
+auth = HTTPBasicAuth()
+
+@auth.verify_password
+def verify_password(username, password):
+    # 環境変数から認証情報を取得
+    valid_username = os.environ.get('BASIC_AUTH_USERNAME', 'admin')
+    valid_password = os.environ.get('BASIC_AUTH_PASSWORD', 'password')
+    return username == valid_username and password == valid_password
+
+# ポートフォリオ機能
+from routes.portfolio import portfolio_bp
+app.register_blueprint(portfolio_bp)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Basic認証設定
 auth = HTTPBasicAuth()
@@ -62,6 +82,38 @@ def analyze():
                 'current_price': stock_data.get('current_price', 0)
             }
         }
+        
+        # Auto-save analysis results
+        try:
+            clean_ticker = ticker.replace('.T', '')
+            
+            # Save technical analysis
+            db_manager.save_analysis_result(
+                ticker=clean_ticker,
+                analysis_type='technical',
+                analysis_data=technical_analysis,
+                metadata={
+                    'period': period,
+                    'analysis_date': datetime.now().isoformat(),
+                    'current_price': stock_data.get('current_price', 0)
+                }
+            )
+            
+            # Save fundamental analysis
+            db_manager.save_analysis_result(
+                ticker=clean_ticker,
+                analysis_type='fundamental',
+                analysis_data=fundamental_analysis,
+                metadata={
+                    'period': period,
+                    'analysis_date': datetime.now().isoformat(),
+                    'current_price': stock_data.get('current_price', 0)
+                }
+            )
+            
+            logger.info(f"Analysis results auto-saved for {clean_ticker}")
+        except Exception as e:
+            logger.warning(f"Failed to auto-save analysis results: {e}")
         
         return jsonify({
             'success': True,
@@ -170,6 +222,23 @@ def backtest():
                 'params': strategy.get_params()
             }
         }
+        
+        # Auto-save backtest results
+        try:
+            clean_ticker = ticker.replace('.T', '')
+            db_manager.save_backtest_result(
+                ticker=clean_ticker,
+                strategy_name=strategy_id,
+                start_date=start_date,
+                end_date=end_date,
+                initial_capital=initial_capital,
+                performance_metrics=performance_metrics,
+                trades_data=backtest_result['trades'],
+                strategy_params=strategy.get_params()
+            )
+            logger.info(f"Backtest results auto-saved for {clean_ticker} using {strategy_id} strategy")
+        except Exception as e:
+            logger.warning(f"Failed to auto-save backtest results: {e}")
         
         print(f"[BACKTEST] レスポンス送信: 成功")
         return jsonify({

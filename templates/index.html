@@ -478,6 +478,241 @@
             font-weight: 600;
         }
         
+        /* Portfolio Management Styles */
+        .portfolio-section {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.08);
+        }
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .portfolio-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
+        }
+        .portfolio-summary {
+            background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #0284c7;
+            margin-bottom: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+        }
+        .summary-item .label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .summary-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .summary-item .positive {
+            color: #059669;
+        }
+        .summary-item .negative {
+            color: #dc2626;
+        }
+        .portfolio-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .portfolio-table th {
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            border: 1px solid #cbd5e1;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #475569;
+            font-size: 12px;
+        }
+        .portfolio-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+            background: rgba(248, 250, 252, 0.8);
+            font-size: 12px;
+        }
+        .portfolio-table .profit {
+            color: #059669;
+            font-weight: bold;
+        }
+        .portfolio-table .loss {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(145deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(145deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: linear-gradient(145deg, #6b7280, #4b5563);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(145deg, #4b5563, #374151);
+            transform: translateY(-1px);
+        }
+        .portfolio-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .portfolio-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .portfolio-tab:hover {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .portfolio-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .portfolio-tab-content {
+            display: none;
+        }
+        .portfolio-tab-content.active {
+            display: block;
+        }
+        .note-item {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 10px;
+        }
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .note-title {
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .note-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .note-content {
+            color: #475569;
+            line-height: 1.5;
+        }
+        .history-item {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 10px;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .history-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .history-type.technical {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .history-type.fundamental {
+            background: #d1fae5;
+            color: #047857;
+        }
+        .history-type.backtest {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
         .detailed-metrics {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -936,6 +1171,7 @@
             <button class="tab" onclick="showTab('advanced-tab')">高度テクニカル</button>
             <button class="tab" onclick="showTab('fundamental-tab')">ファンダメンタル</button>
             <button class="tab" onclick="showTab('backtest-tab')">バックテスト</button>
+            <button class="tab" onclick="showTab('portfolio-tab')">ポートフォリオ</button>
         </div>
         
         <div id="technical-tab" class="tab-content active">
@@ -1212,6 +1448,217 @@
             <div id="backtest-loading" class="loading" style="display: none;">
                 <div class="loading-spinner"></div>
                 <p>バックテストを実行中...</p>
+            </div>
+        </div>
+        
+        <div id="portfolio-tab" class="tab-content">
+            <!-- Portfolio Management Section -->
+            <div class="portfolio-section">
+                <h3 style="color: #475569; margin-bottom: 20px;">💼 ポートフォリオ管理</h3>
+                
+                <!-- Portfolio Summary -->
+                <div id="portfolio-summary" class="portfolio-summary">
+                    <h4 style="margin: 0 0 15px 0; color: #0f172a;">📈 ポートフォリオサマリー</h4>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="label">保有銘柄数</div>
+                            <div class="value" id="total-stocks">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">総投資金額</div>
+                            <div class="value" id="total-investment">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">現在価値</div>
+                            <div class="value" id="current-value">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">损益</div>
+                            <div class="value" id="total-profit-loss">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">损益率</div>
+                            <div class="value" id="total-profit-loss-pct">0.00%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Portfolio Tabs -->
+                <div class="portfolio-tabs">
+                    <button class="portfolio-tab active" onclick="showPortfolioTab('portfolio-holdings')">Portfolio</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('watchlist')">Watchlist</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('notes')">メモ</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('history')">History</button>
+                </div>
+                
+                <!-- Portfolio Holdings Tab -->
+                <div id="portfolio-holdings" class="portfolio-tab-content active">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>📊 ポートフォリオ一覧</h4>
+                            <div id="portfolio-table-container">
+                                <table class="portfolio-table">
+                                    <thead>
+                                        <tr>
+                                            <th>銘柄</th>
+                                            <th>企業名</th>
+                                            <th>保有数</th>
+                                            <th>平均取得価格</th>
+                                            <th>現在価格</th>
+                                            <th>损益</th>
+                                            <th>损益率</th>
+                                            <th>アクション</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="portfolio-tbody">
+                                        <tr>
+                                            <td colspan="8" style="text-align: center; color: #64748b; padding: 20px;">
+                                                ポートフォリオデータを読み込み中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ 銘柄追加</h4>
+                            <form id="add-to-portfolio-form">
+                                <div class="form-group">
+                                    <label for="add-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="add-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-shares">保有数</label>
+                                    <input type="number" id="add-shares" min="1" placeholder="100" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-price">平均取得価格</label>
+                                    <input type="number" id="add-price" min="0" step="0.01" placeholder="2800" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-notes">メモ (任意)</label>
+                                    <textarea id="add-notes" placeholder="購入理由やメモを記入..."></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">追加</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearAddForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Watchlist Tab -->
+                <div id="watchlist" class="portfolio-tab-content">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>👀 ウォッチリスト</h4>
+                            <div id="watchlist-table-container">
+                                <table class="portfolio-table">
+                                    <thead>
+                                        <tr>
+                                            <th>銘柄</th>
+                                            <th>企業名</th>
+                                            <th>目標価格</th>
+                                            <th>アラート</th>
+                                            <th>追加日</th>
+                                            <th>アクション</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="watchlist-tbody">
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">
+                                                ウォッチリストデータを読み込み中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ ウォッチリスト追加</h4>
+                            <form id="add-to-watchlist-form">
+                                <div class="form-group">
+                                    <label for="watch-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="watch-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="watch-target-price">目標価格 (任意)</label>
+                                    <input type="number" id="watch-target-price" min="0" step="0.01" placeholder="3000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="watch-notes">メモ (任意)</label>
+                                    <textarea id="watch-notes" placeholder="注目理由やメモを記入..."></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">追加</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearWatchForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes Tab -->
+                <div id="notes" class="portfolio-tab-content">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>📝 投資メモ一覧</h4>
+                            <div id="notes-container">
+                                <div style="text-align: center; color: #64748b; padding: 20px;">
+                                    メモデータを読み込み中...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ メモ追加</h4>
+                            <form id="add-note-form">
+                                <div class="form-group">
+                                    <label for="note-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="note-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-title">タイトル</label>
+                                    <input type="text" id="note-title" placeholder="メモのタイトル" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-type">カテゴリ</label>
+                                    <select id="note-type">
+                                        <option value="general">一般</option>
+                                        <option value="analysis">分析</option>
+                                        <option value="strategy">戦略</option>
+                                        <option value="risk">リスク</option>
+                                        <option value="news">ニュース</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-content">内容</label>
+                                    <textarea id="note-content" style="height: 120px;" placeholder="メモの内容を記入..." required></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">保存</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearNoteForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="history" class="portfolio-tab-content">
+                    <div class="portfolio-section">
+                        <h4>📈 分析・バックテスト履歴</h4>
+                        <div id="history-container">
+                            <div style="text-align: center; color: #64748b; padding: 20px;">
+                                履歴データを読み込み中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </div>
@@ -1826,6 +2273,11 @@
             // 選択されたタブとコンテンツを表示
             event.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+            
+            // ポートフォリオタブが表示されたときにデータをロード
+            if (tabId === 'portfolio-tab' && typeof loadPortfolioData === 'function') {
+                loadPortfolioData();
+            }
         }
         
         // メモデータのローカルストレージ管理
@@ -2287,6 +2739,490 @@
             // 選択されたタブとコンテンツを表示
             event.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+        }
+        
+        // Portfolio Management Functions
+        function showPortfolioTab(tabId) {
+            // すべてのポートフォリオタブとコンテンツを非表示
+            document.querySelectorAll('.portfolio-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.portfolio-tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 選択されたタブとコンテンツを表示
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // タブが表示されたときにデータをロード
+            if (tabId === 'portfolio-holdings') {
+                loadPortfolioData();
+            } else if (tabId === 'watchlist') {
+                loadWatchlistData();
+            } else if (tabId === 'notes') {
+                loadNotesData();
+            } else if (tabId === 'history') {
+                loadHistoryData();
+            }
+        }
+        
+        async function loadPortfolioData() {
+            try {
+                const response = await fetch('/api/portfolio/portfolio');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPortfolioData(result.data.portfolio);
+                    updatePortfolioSummary(result.data.summary);
+                } else {
+                    console.error('Portfolio data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load portfolio data:', error);
+            }
+        }
+        
+        function displayPortfolioData(portfolio) {
+            const tbody = document.getElementById('portfolio-tbody');
+            
+            if (!portfolio || portfolio.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #64748b; padding: 20px;">
+                            ポートフォリオに銘柄がありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = portfolio.map(item => {
+                const profitLoss = item.profit_loss || 0;
+                const profitLossPct = item.profit_loss_pct || 0;
+                const profitClass = profitLoss >= 0 ? 'profit' : 'loss';
+                
+                return `
+                    <tr>
+                        <td>${item.ticker}</td>
+                        <td>${item.company_name || ''}</td>
+                        <td>${(item.shares || 0).toLocaleString()}</td>
+                        <td>￥${(item.average_price || 0).toLocaleString()}</td>
+                        <td>￥${(item.current_price || 0).toLocaleString()}</td>
+                        <td class="${profitClass}">￥${profitLoss.toLocaleString()}</td>
+                        <td class="${profitClass}">${profitLossPct.toFixed(2)}%</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="removeFromPortfolio(${item.id})">削除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function updatePortfolioSummary(summary) {
+            document.getElementById('total-stocks').textContent = summary.total_stocks || 0;
+            document.getElementById('total-investment').textContent = `￥${(summary.total_investment || 0).toLocaleString()}`;
+            document.getElementById('current-value').textContent = `￥${(summary.current_value || 0).toLocaleString()}`;
+            
+            const profitLoss = summary.total_profit_loss || 0;
+            const profitLossPct = summary.total_profit_loss_pct || 0;
+            const profitClass = profitLoss >= 0 ? 'positive' : 'negative';
+            
+            const profitLossElement = document.getElementById('total-profit-loss');
+            const profitLossPctElement = document.getElementById('total-profit-loss-pct');
+            
+            profitLossElement.textContent = `￥${profitLoss.toLocaleString()}`;
+            profitLossElement.className = `value ${profitClass}`;
+            
+            profitLossPctElement.textContent = `${profitLossPct.toFixed(2)}%`;
+            profitLossPctElement.className = `value ${profitClass}`;
+        }
+        
+        async function loadWatchlistData() {
+            try {
+                const response = await fetch('/api/portfolio/watchlist');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayWatchlistData(result.data);
+                } else {
+                    console.error('Watchlist data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load watchlist data:', error);
+            }
+        }
+        
+        function displayWatchlistData(watchlist) {
+            const tbody = document.getElementById('watchlist-tbody');
+            
+            if (!watchlist || watchlist.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">
+                            ウォッチリストに銘柄がありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = watchlist.map(item => {
+                const targetPrice = item.target_price ? `￥${item.target_price.toLocaleString()}` : '-';
+                const alertEnabled = item.alert_enabled ? '✅' : '❌';
+                const dateAdded = new Date(item.date_added).toLocaleDateString('ja-JP');
+                
+                return `
+                    <tr>
+                        <td>${item.ticker}</td>
+                        <td>${item.company_name || ''}</td>
+                        <td>${targetPrice}</td>
+                        <td>${alertEnabled}</td>
+                        <td>${dateAdded}</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="removeFromWatchlist(${item.id})">削除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function loadNotesData() {
+            try {
+                const response = await fetch('/api/portfolio/notes');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayNotesData(result.data);
+                } else {
+                    console.error('Notes data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load notes data:', error);
+            }
+        }
+        
+        function displayNotesData(notes) {
+            const container = document.getElementById('notes-container');
+            
+            if (!notes || notes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        メモがありません
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notes.map(note => {
+                const dateCreated = new Date(note.date_created).toLocaleDateString('ja-JP');
+                const noteTypeColors = {
+                    'general': '#6b7280',
+                    'analysis': '#3b82f6',
+                    'strategy': '#10b981',
+                    'risk': '#ef4444',
+                    'news': '#f59e0b'
+                };
+                const typeColor = noteTypeColors[note.note_type] || '#6b7280';
+                
+                return `
+                    <div class="note-item">
+                        <div class="note-header">
+                            <div>
+                                <div class="note-title">${note.title}</div>
+                                <div class="note-meta">
+                                    ${note.ticker} | 
+                                    <span style="color: ${typeColor}; font-weight: bold;">${note.note_type}</span> | 
+                                    ${dateCreated}
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="archiveNote(${note.id})">削除</button>
+                        </div>
+                        <div class="note-content">${note.content}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadHistoryData() {
+            try {
+                const [analysisResponse, backtestResponse] = await Promise.all([
+                    fetch('/api/portfolio/analysis-history?limit=20'),
+                    fetch('/api/portfolio/backtest-history?limit=20')
+                ]);
+                
+                const analysisResult = await analysisResponse.json();
+                const backtestResult = await backtestResponse.json();
+                
+                const allHistory = [];
+                
+                if (analysisResult.success) {
+                    allHistory.push(...analysisResult.data.map(item => ({...item, type: 'analysis'})));
+                }
+                
+                if (backtestResult.success) {
+                    allHistory.push(...backtestResult.data.map(item => ({...item, type: 'backtest'})));
+                }
+                
+                // 日付でソート
+                allHistory.sort((a, b) => new Date(b.date_created) - new Date(a.date_created));
+                
+                displayHistoryData(allHistory);
+                
+            } catch (error) {
+                console.error('Failed to load history data:', error);
+            }
+        }
+        
+        function displayHistoryData(history) {
+            const container = document.getElementById('history-container');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        履歴データがありません
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = history.map(item => {
+                const dateCreated = new Date(item.date_created).toLocaleDateString('ja-JP');
+                let typeLabel = '';
+                let summary = '';
+                
+                if (item.type === 'analysis') {
+                    typeLabel = item.analysis_type === 'technical' ? 'Technical' : 'Fundamental';
+                    summary = `${item.ticker} - ${item.analysis_type} analysis`;
+                } else if (item.type === 'backtest') {
+                    typeLabel = 'Backtest';
+                    const returnPct = item.total_return_pct || 0;
+                    summary = `${item.ticker} - ${item.strategy_name} (${returnPct.toFixed(2)}%)`;
+                }
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <div>
+                                <span class="history-type ${item.analysis_type || 'backtest'}">${typeLabel}</span>
+                                <strong>${summary}</strong>
+                            </div>
+                            <div class="note-meta">${dateCreated}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Form handling functions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Portfolio form
+            document.getElementById('add-to-portfolio-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('add-ticker').value;
+                const shares = parseInt(document.getElementById('add-shares').value);
+                const price = parseFloat(document.getElementById('add-price').value);
+                const notes = document.getElementById('add-notes').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/portfolio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            shares: shares,
+                            average_price: price,
+                            notes: notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('ポートフォリオに追加しました');
+                        clearAddForm();
+                        loadPortfolioData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Watchlist form
+            document.getElementById('add-to-watchlist-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('watch-ticker').value;
+                const targetPrice = parseFloat(document.getElementById('watch-target-price').value) || null;
+                const notes = document.getElementById('watch-notes').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/watchlist', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            target_price: targetPrice,
+                            notes: notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('ウォッチリストに追加しました');
+                        clearWatchForm();
+                        loadWatchlistData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Notes form
+            document.getElementById('add-note-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('note-ticker').value;
+                const title = document.getElementById('note-title').value;
+                const noteType = document.getElementById('note-type').value;
+                const content = document.getElementById('note-content').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/notes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            title: title,
+                            note_type: noteType,
+                            content: content
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('メモを保存しました');
+                        clearNoteForm();
+                        loadNotesData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Load portfolio data on page load if portfolio tab is active
+            if (document.getElementById('portfolio-tab').classList.contains('active')) {
+                loadPortfolioData();
+            }
+        });
+        
+        function clearAddForm() {
+            document.getElementById('add-ticker').value = '';
+            document.getElementById('add-shares').value = '';
+            document.getElementById('add-price').value = '';
+            document.getElementById('add-notes').value = '';
+        }
+        
+        function clearWatchForm() {
+            document.getElementById('watch-ticker').value = '';
+            document.getElementById('watch-target-price').value = '';
+            document.getElementById('watch-notes').value = '';
+        }
+        
+        function clearNoteForm() {
+            document.getElementById('note-ticker').value = '';
+            document.getElementById('note-title').value = '';
+            document.getElementById('note-type').value = 'general';
+            document.getElementById('note-content').value = '';
+        }
+        
+        async function removeFromPortfolio(portfolioId) {
+            if (!confirm('この銘柄をポートフォリオから削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/portfolio/${portfolioId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadPortfolioData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
+        }
+        
+        async function removeFromWatchlist(watchlistId) {
+            if (!confirm('この銘柄をウォッチリストから削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/watchlist/${watchlistId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadWatchlistData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
+        }
+        
+        async function archiveNote(noteId) {
+            if (!confirm('このメモを削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/notes/${noteId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadNotesData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
         }
         
         // 新しいバックテストUI用関数

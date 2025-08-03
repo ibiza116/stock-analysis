@@ -9,7 +9,9 @@
       "Bash(git commit:*)",
       "Bash(source:*)",
       "Bash(pip install:*)",
-      "Bash(myenv/Scripts/python.exe -m pip install:*)"
+      "Bash(myenv/Scripts/python.exe -m pip install:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:web-production-7ddba.up.railway.app)"
     ],
     "deny": []
   }
