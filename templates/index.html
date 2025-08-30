@@ -330,6 +330,11 @@
         </div>
         
         <button onclick="analyzeStock()" id="analyze-btn">分析実行</button>
+        <button onclick="calculateSwingScore()" id="swing-score-btn" class="swing-score-btn" style="margin-left: 10px;">📊 スイング投資スコア</button>
+    </div>
+
+    <div id="swing-score-container" class="swing-score-container" style="display: none;">
+        <!-- スイング投資スコア結果がここに表示されます -->
     </div>
 
     <div id="results-container" class="results-container">
@@ -2272,6 +2277,330 @@
         // ===============================================
         
         // ページ読み込み完了時の初期化
+        // スイング投資スコア計算機能
+        async function calculateSwingScore() {
+            console.log('🔍 [DEBUG] calculateSwingScore function called');
+            const periodElement = document.getElementById('period');
+            
+            if (!periodElement) {
+                alert('期間選択要素が見つかりません');
+                return;
+            }
+            
+            const period = periodElement.value;
+            const button = document.getElementById('swing-score-btn');
+            const scoreContainer = document.getElementById('swing-score-container');
+            
+            // チェックされた銘柄を取得
+            const checkboxes = document.querySelectorAll('.stock-checkbox:checked');
+            const tickers = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (tickers.length === 0) {
+                alert('少なくとも1つの銘柄を選択してください');
+                return;
+            }
+            
+            if (tickers.length > 1) {
+                alert('スイング投資スコアは1銘柄ずつ計算してください');
+                return;
+            }
+            
+            const ticker = tickers[0];
+            
+            // ボタン無効化とローディング表示
+            button.disabled = true;
+            button.textContent = '📊 計算中...';
+            scoreContainer.style.display = 'block';
+            scoreContainer.innerHTML = '<div class="loading">📊 スイング投資スコアを計算中...</div>';
+            
+            try {
+                const response = await fetch('/swing_score', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker,
+                        period: period
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displaySwingScore(result.data, ticker);
+                } else {
+                    scoreContainer.innerHTML = `<div class="error">❌ エラー: ${result.error}</div>`;
+                }
+                
+            } catch (error) {
+                console.error('Swing score calculation error:', error);
+                scoreContainer.innerHTML = `<div class="error">❌ スイング投資スコア計算エラー: ${error.message}</div>`;
+            } finally {
+                // ボタンを元に戻す
+                button.disabled = false;
+                button.textContent = '📊 スイング投資スコア';
+            }
+        }
+        
+        function displaySwingScore(scoreData, ticker) {
+            const scoreContainer = document.getElementById('swing-score-container');
+            const { total_score, scores, judgment, color, risk_management } = scoreData;
+            
+            const scoreHtml = `
+                <div class="swing-score-panel">
+                    <div class="swing-score-header">
+                        <h3>📊 スイング投資スコア分析 - ${ticker}</h3>
+                        <div class="total-score" style="background-color: ${color};">
+                            ${total_score}/100
+                        </div>
+                    </div>
+                    
+                    <div class="judgment-panel" style="border-left: 4px solid ${color};">
+                        <h4>投資判定</h4>
+                        <div class="judgment-text" style="color: ${color}; font-size: 24px; font-weight: bold;">
+                            ${judgment}
+                        </div>
+                    </div>
+                    
+                    <div class="score-breakdown">
+                        <h4>📈 詳細スコア内訳</h4>
+                        <div class="score-items">
+                            <div class="score-item">
+                                <span class="score-label">🔄 トレンド評価</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(scores.trend/20)*100}%; background-color: ${getScoreColor(scores.trend, 20)};"></div>
+                                    <span class="score-value">${scores.trend}/20</span>
+                                </div>
+                            </div>
+                            
+                            <div class="score-item">
+                                <span class="score-label">⚡ モメンタム</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(scores.momentum/20)*100}%; background-color: ${getScoreColor(scores.momentum, 20)};"></div>
+                                    <span class="score-value">${scores.momentum}/20</span>
+                                </div>
+                            </div>
+                            
+                            <div class="score-item">
+                                <span class="score-label">📊 ボラティリティ</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(scores.volatility/20)*100}%; background-color: ${getScoreColor(scores.volatility, 20)};"></div>
+                                    <span class="score-value">${scores.volatility}/20</span>
+                                </div>
+                            </div>
+                            
+                            <div class="score-item">
+                                <span class="score-label">📈 出来高</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(scores.volume/20)*100}%; background-color: ${getScoreColor(scores.volume, 20)};"></div>
+                                    <span class="score-value">${scores.volume}/20</span>
+                                </div>
+                            </div>
+                            
+                            <div class="score-item">
+                                <span class="score-label">🎯 サポート/レジスタンス</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(scores.support_resistance/20)*100}%; background-color: ${getScoreColor(scores.support_resistance, 20)};"></div>
+                                    <span class="score-value">${scores.support_resistance}/20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="risk-management-panel">
+                        <h4>🛡️ リスク管理情報</h4>
+                        <div class="risk-info-grid">
+                            <div class="risk-item">
+                                <span class="risk-label">ストップロス</span>
+                                <span class="risk-value">¥${risk_management.stop_loss.toLocaleString()}</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">利確目標</span>
+                                <span class="risk-value">¥${risk_management.take_profit.toLocaleString()}</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">リスク額</span>
+                                <span class="risk-value">¥${risk_management.risk_amount.toLocaleString()}</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">推奨ポジション</span>
+                                <span class="risk-value">${risk_management.suggested_position_size.toLocaleString()}株</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">リスクリワード</span>
+                                <span class="risk-value">1:${risk_management.risk_reward_ratio}</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">リスク率</span>
+                                <span class="risk-value">${risk_management.risk_percentage}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                .swing-score-panel {
+                    background: #ffffff;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin: 20px 0;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    border: 1px solid #e5e7eb;
+                }
+                
+                .swing-score-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 24px;
+                    padding-bottom: 16px;
+                    border-bottom: 2px solid #f3f4f6;
+                }
+                
+                .total-score {
+                    color: white;
+                    font-size: 36px;
+                    font-weight: bold;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    text-align: center;
+                    min-width: 120px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                }
+                
+                .judgment-panel {
+                    background: #f8fafc;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 24px;
+                }
+                
+                .judgment-text {
+                    margin-top: 8px;
+                }
+                
+                .score-breakdown {
+                    margin-bottom: 24px;
+                }
+                
+                .score-items {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+                
+                .score-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+                
+                .score-label {
+                    min-width: 180px;
+                    font-weight: 600;
+                    color: #374151;
+                }
+                
+                .score-bar {
+                    flex: 1;
+                    height: 24px;
+                    background: #e5e7eb;
+                    border-radius: 12px;
+                    position: relative;
+                    overflow: hidden;
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .score-fill {
+                    height: 100%;
+                    border-radius: 12px;
+                    transition: width 0.5s ease;
+                }
+                
+                .score-value {
+                    position: absolute;
+                    right: 12px;
+                    font-weight: 600;
+                    color: #374151;
+                    font-size: 14px;
+                }
+                
+                .risk-management-panel {
+                    background: #fef7f0;
+                    padding: 20px;
+                    border-radius: 8px;
+                    border: 1px solid #fed7aa;
+                }
+                
+                .risk-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 16px;
+                    margin-top: 16px;
+                }
+                
+                .risk-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px;
+                    background: white;
+                    border-radius: 6px;
+                    border: 1px solid #e5e7eb;
+                }
+                
+                .risk-label {
+                    font-weight: 600;
+                    color: #6b7280;
+                    font-size: 14px;
+                }
+                
+                .risk-value {
+                    font-weight: bold;
+                    color: #374151;
+                    font-size: 16px;
+                }
+                
+                .swing-score-btn {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                }
+                
+                .swing-score-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                }
+                
+                .swing-score-btn:disabled {
+                    background: #9ca3af;
+                    cursor: not-allowed;
+                    transform: none;
+                    box-shadow: none;
+                }
+                </style>
+            `;
+            
+            scoreContainer.innerHTML = scoreHtml;
+        }
+        
+        function getScoreColor(score, maxScore) {
+            const percentage = (score / maxScore) * 100;
+            if (percentage >= 80) return '#10b981'; // 緑
+            if (percentage >= 60) return '#84cc16'; // 黄緑
+            if (percentage >= 40) return '#f59e0b'; // 黄色
+            return '#ef4444'; // 赤
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
     console.log('🔍 DEBUG: v7.0 3-Mode Integration loaded successfully at', new Date().toLocaleString());
             initializeStockTable();

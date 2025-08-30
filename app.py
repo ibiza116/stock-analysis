@@ -444,6 +444,52 @@ def new_main_page():
     """Serve the new main page."""
     return render_template('index_new.html')
 
+@app.route('/swing_score', methods=['POST'])
+def calculate_swing_score():
+    """スイング投資スコア計算API"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 400
+            
+        ticker = data['ticker']
+        period = data.get('period', '6mo')
+        
+        # データ取得
+        fetcher = StockDataFetcher()
+        stock_data = fetcher.fetch_stock_data(ticker, period)
+        
+        if not stock_data:
+            return jsonify({'error': 'Failed to fetch stock data'}), 500
+        
+        # スイング投資スコア計算
+        analyzer = TechnicalAnalyzer()
+        swing_score = analyzer.calculate_swing_score(stock_data)
+        
+        # Auto-save analysis result
+        try:
+            clean_ticker = ticker.replace('.T', '')
+            db_manager.save_analysis_result(
+                ticker=clean_ticker,
+                analysis_type='swing_score',
+                analysis_data=swing_score,
+                metadata={'period': period}
+            )
+            logger.info(f"Swing score results auto-saved for {clean_ticker}")
+        except Exception as e:
+            logger.warning(f"Failed to auto-save swing score results: {e}")
+        
+        return jsonify({
+            'success': True,
+            'data': swing_score,
+            'ticker': ticker,
+            'period': period
+        })
+        
+    except Exception as e:
+        logger.error(f"Error calculating swing score: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     port = int(os.environ.get('PORT', 5000))

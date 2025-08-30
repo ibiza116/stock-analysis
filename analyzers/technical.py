@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from ta.trend import SMAIndicator, MACD
 from ta.momentum import RSIIndicator, StochasticOscillator
-from ta.volatility import BollingerBands
+from ta.volatility import BollingerBands, AverageTrueRange
 
 class TechnicalAnalyzer:
     def analyze(self, stock_data):
@@ -471,3 +471,294 @@ class TechnicalAnalyzer:
                 })
         
         return signals
+    
+    def calculate_swing_score(self, stock_data):
+        """
+        スイング投資スコア（100点満点）を計算
+        評価項目：トレンド、モメンタム、ボラティリティ、出来高、サポート/レジスタンス
+        """
+        df = pd.DataFrame(stock_data['prices'])
+        df['Date'] = pd.to_datetime(stock_data['dates'])
+        df.set_index('Date', inplace=True)
+        
+        # テクニカル指標を計算
+        df['SMA_5'] = SMAIndicator(close=df['Close'], window=5).sma_indicator()
+        df['SMA_25'] = SMAIndicator(close=df['Close'], window=25).sma_indicator()
+        df['SMA_75'] = SMAIndicator(close=df['Close'], window=75).sma_indicator()
+        
+        df['RSI'] = RSIIndicator(close=df['Close'], window=14).rsi()
+        
+        macd = MACD(close=df['Close'], window_fast=12, window_slow=26, window_sign=9)
+        df['MACD'] = macd.macd()
+        df['MACD_signal'] = macd.macd_signal()
+        
+        bb = BollingerBands(close=df['Close'], window=20, window_dev=2)
+        df['BB_upper'] = bb.bollinger_hband()
+        df['BB_middle'] = bb.bollinger_mavg()
+        df['BB_lower'] = bb.bollinger_lband()
+        
+        atr = AverageTrueRange(high=df['High'], low=df['Low'], close=df['Close'], window=14)
+        df['ATR'] = atr.average_true_range()
+        
+        df['Volume_SMA'] = SMAIndicator(close=df['Volume'], window=20).sma_indicator()
+        
+        # 現在の値を取得
+        current_price = df['Close'].iloc[-1]
+        current_sma5 = self._safe_float(df['SMA_5'].iloc[-1])
+        current_sma25 = self._safe_float(df['SMA_25'].iloc[-1]) 
+        current_sma75 = self._safe_float(df['SMA_75'].iloc[-1])
+        current_rsi = self._safe_float(df['RSI'].iloc[-1])
+        current_macd = self._safe_float(df['MACD'].iloc[-1])
+        current_macd_signal = self._safe_float(df['MACD_signal'].iloc[-1])
+        current_bb_upper = self._safe_float(df['BB_upper'].iloc[-1])
+        current_bb_lower = self._safe_float(df['BB_lower'].iloc[-1])
+        current_atr = self._safe_float(df['ATR'].iloc[-1])
+        current_volume = df['Volume'].iloc[-1]
+        current_volume_sma = self._safe_float(df['Volume_SMA'].iloc[-1])
+        
+        scores = {}
+        
+        # 1. トレンド評価 (20点満点)
+        trend_score = self._calculate_trend_score(
+            current_price, current_sma5, current_sma25, current_sma75, df
+        )
+        scores['trend'] = trend_score
+        
+        # 2. モメンタム評価 (20点満点)
+        momentum_score = self._calculate_momentum_score(
+            current_rsi, current_macd, current_macd_signal
+        )
+        scores['momentum'] = momentum_score
+        
+        # 3. ボラティリティ評価 (20点満点)
+        volatility_score = self._calculate_volatility_score(
+            current_price, current_bb_upper, current_bb_lower, current_atr, df
+        )
+        scores['volatility'] = volatility_score
+        
+        # 4. 出来高評価 (20点満点)
+        volume_score = self._calculate_volume_score(
+            current_volume, current_volume_sma, df
+        )
+        scores['volume'] = volume_score
+        
+        # 5. サポート/レジスタンス評価 (20点満点)
+        sr_score = self._calculate_support_resistance_score(
+            current_price, df
+        )
+        scores['support_resistance'] = sr_score
+        
+        # 総合スコア
+        total_score = sum(scores.values())
+        
+        # 判定
+        if total_score >= 80:
+            judgment = "強い買いシグナル"
+            color = "#10b981"
+        elif total_score >= 60:
+            judgment = "買い推奨"  
+            color = "#84cc16"
+        elif total_score >= 40:
+            judgment = "中立・様子見"
+            color = "#6b7280"
+        else:
+            judgment = "売り推奨"
+            color = "#ef4444"
+        
+        # リスク管理情報
+        risk_info = self._calculate_risk_management(
+            current_price, current_atr, df
+        )
+        
+        return {
+            'total_score': total_score,
+            'scores': scores,
+            'judgment': judgment,
+            'color': color,
+            'risk_management': risk_info
+        }
+    
+    def _calculate_trend_score(self, price, sma5, sma25, sma75, df):
+        """トレンド評価スコア (20点満点)"""
+        score = 0
+        
+        # 移動平均線の並び順 (10点)
+        if sma5 > sma25 > sma75:
+            score += 10  # パーフェクトオーダー上昇
+        elif sma5 > sma25:
+            score += 6   # 短期上昇トレンド
+        elif sma25 > sma75:
+            score += 4   # 中期上昇トレンド
+        elif sma5 < sma25 < sma75:
+            score += 0   # パーフェクトオーダー下降
+        else:
+            score += 2   # 混在状態
+        
+        # 現在価格と移動平均線の位置 (10点)
+        if price > sma5 > sma25:
+            score += 8   # 価格が上位移動平均線上
+        elif price > sma5:
+            score += 6   # 価格が短期移動平均線上
+        elif price > sma25:
+            score += 4   # 価格が中期移動平均線上
+        elif price < sma5 < sma25:
+            score += 0   # 価格が下位移動平均線下
+        else:
+            score += 2   # 混在状態
+        
+        return min(score, 20)
+    
+    def _calculate_momentum_score(self, rsi, macd, macd_signal):
+        """モメンタム評価スコア (20点満点)"""
+        score = 0
+        
+        # RSI評価 (10点)
+        if 50 <= rsi <= 70:
+            score += 8   # 健全な上昇
+        elif 40 <= rsi < 50:
+            score += 6   # やや強気
+        elif 30 <= rsi < 40:
+            score += 4   # 売られすぎから回復
+        elif rsi > 70:
+            score += 2   # 買われすぎ注意
+        else:
+            score += 0   # 弱気
+        
+        # MACD評価 (10点)  
+        if macd > macd_signal and macd > 0:
+            score += 8   # 強い上昇モメンタム
+        elif macd > macd_signal:
+            score += 6   # 上昇転換
+        elif macd < macd_signal and macd < 0:
+            score += 0   # 下降モメンタム
+        else:
+            score += 4   # 横ばい・調整
+        
+        return min(score, 20)
+    
+    def _calculate_volatility_score(self, price, bb_upper, bb_lower, atr, df):
+        """ボラティリティ評価スコア (20点満点)"""
+        score = 0
+        
+        # ボリンジャーバンド位置 (10点)
+        bb_position = (price - bb_lower) / (bb_upper - bb_lower) * 100
+        if 40 <= bb_position <= 60:
+            score += 8   # バンド中央付近（理想的）
+        elif 20 <= bb_position < 40:
+            score += 6   # 下部（買い場候補）  
+        elif 60 < bb_position <= 80:
+            score += 6   # 上部（まだ余地あり）
+        elif bb_position < 20:
+            score += 4   # 売られすぎ（リスク高）
+        else:
+            score += 2   # 買われすぎ（リスク高）
+        
+        # ATRトレンド評価 (10点)
+        atr_20 = df['ATR'].tail(20).mean()
+        atr_5 = df['ATR'].tail(5).mean()
+        
+        if atr_5 < atr_20 * 0.8:
+            score += 8   # ボラティリティ低下（安定）
+        elif atr_5 < atr_20:
+            score += 6   # やや安定化
+        elif atr_5 < atr_20 * 1.2:
+            score += 4   # 通常範囲
+        else:
+            score += 2   # 高ボラティリティ（リスク高）
+        
+        return min(score, 20)
+    
+    def _calculate_volume_score(self, volume, volume_sma, df):
+        """出来高評価スコア (20点満点)"""
+        score = 0
+        
+        # 出来高比率 (10点)
+        volume_ratio = volume / volume_sma if volume_sma > 0 else 1
+        if 1.2 <= volume_ratio <= 2.0:
+            score += 8   # 健全な増加
+        elif 1.0 <= volume_ratio < 1.2:
+            score += 6   # やや増加
+        elif 0.8 <= volume_ratio < 1.0:
+            score += 4   # 標準的
+        elif volume_ratio > 2.0:
+            score += 6   # 大幅増加（注目度高）
+        else:
+            score += 2   # 出来高減少
+        
+        # 出来高トレンド (10点)
+        recent_volumes = df['Volume'].tail(5)
+        older_volumes = df['Volume'].tail(20).head(15)
+        
+        if recent_volumes.mean() > older_volumes.mean() * 1.2:
+            score += 8   # 出来高増加トレンド
+        elif recent_volumes.mean() > older_volumes.mean():
+            score += 6   # やや増加傾向
+        elif recent_volumes.mean() > older_volumes.mean() * 0.8:
+            score += 4   # 安定
+        else:
+            score += 2   # 出来高減少傾向
+        
+        return min(score, 20)
+    
+    def _calculate_support_resistance_score(self, price, df):
+        """サポート/レジスタンス評価スコア (20点満点)"""
+        score = 0
+        
+        # 過去20日の高値・安値
+        high_20 = df['High'].tail(20).max()
+        low_20 = df['Low'].tail(20).min()
+        
+        # 価格位置評価 (10点)
+        price_position = (price - low_20) / (high_20 - low_20) * 100
+        if 30 <= price_position <= 70:
+            score += 8   # 中位（余地あり）
+        elif 20 <= price_position < 30:
+            score += 6   # 下位（買い場）
+        elif 70 < price_position <= 80:
+            score += 6   # 上位（まだ余地）
+        elif price_position < 20:
+            score += 4   # 安値圏（反発期待）
+        else:
+            score += 2   # 高値圏（利確検討）
+        
+        # サポートライン強度 (10点)
+        recent_lows = df['Low'].tail(20)
+        support_touches = sum(abs(low - price) / price < 0.02 for low in recent_lows)
+        
+        if support_touches >= 3:
+            score += 8   # 強いサポート
+        elif support_touches >= 2:
+            score += 6   # 中程度サポート
+        elif support_touches >= 1:
+            score += 4   # 弱いサポート
+        else:
+            score += 2   # サポート不明確
+        
+        return min(score, 20)
+    
+    def _calculate_risk_management(self, price, atr, df):
+        """リスク管理情報を計算"""
+        if atr <= 0:
+            atr = price * 0.02  # ATRが0の場合は価格の2%を使用
+        
+        # ストップロス（ATR×2）
+        stop_loss = price - (atr * 2)
+        
+        # 利確目標（リスクリワード比1:2）
+        risk = price - stop_loss
+        take_profit = price + (risk * 2)
+        
+        # 推奨ポジションサイズ（総資産の3%リスク）
+        # 仮に100万円の総資産として計算
+        total_capital = 1000000
+        risk_per_trade = total_capital * 0.03
+        shares_suggested = int(risk_per_trade / risk) if risk > 0 else 0
+        
+        return {
+            'stop_loss': round(stop_loss, 2),
+            'take_profit': round(take_profit, 2), 
+            'risk_amount': round(risk, 2),
+            'risk_reward_ratio': 2.0,
+            'suggested_position_size': max(shares_suggested, 100),  # 最小100株
+            'risk_percentage': 3.0
+        }
