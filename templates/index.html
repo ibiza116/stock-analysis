@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<!-- DEBUG: Template served from templates/index.html v7.0 - Timestamp: 2025-08-29 22:05:00 -->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株価分析ツール - 3つのモード統合版 [v7.0]</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a202c;
+            color: #ffffff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #2d3748;
+            border-radius: 10px;
+        }
+        
+        .analysis-form {
+            background: #2d3748;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: #374151;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .stock-table th {
+            background: #4a5568;
+            color: #ffffff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .stock-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #4a5568;
+        }
+        
+        .stock-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .stock-table tr:hover {
+            background: #4a5568;
+        }
+        
+        .stock-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #4299e1;
+        }
+        
+        .select-all-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .select-btn {
+            padding: 6px 12px;
+            background: #4a5568;
+            border: none;
+            border-radius: 4px;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .select-btn:hover {
+            background: #2d3748;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #a0aec0;
+            font-weight: 500;
+        }
+        
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            background: #374151;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        
+        button {
+            background: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            background: #3182ce;
+        }
+        
+        .results-container {
+            display: none;
+        }
+        
+        .stock-card {
+            background: #2d3748;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #4a5568;
+        }
+        
+        .stock-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .signal-item {
+            background: #374151;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .signal-label {
+            display: block;
+            color: #a0aec0;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .signal-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .signal-buy { color: #48bb78; }
+        .signal-sell { color: #f56565; }
+        .signal-neutral { color: #a0aec0; }
+        
+        .chart-container {
+            background: #374151;
+            border-radius: 8px;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #a0aec0;
+            font-size: 16px;
+        }
+        
+        .error {
+            color: #f56565;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* 3つのモード表示機能のスタイル */
+        .mode-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            background: #4a5568;
+            color: #ffffff;
+            border: 2px solid #4a5568;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .mode-btn:hover {
+            background: #2d3748;
+            border-color: #63b3ed;
+            transform: translateY(-2px);
+        }
+        
+        .mode-btn.active {
+            background: #3182ce;
+            border-color: #3182ce;
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+        }
+        
+        .mode-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .backtest-form {
+            background: #2d3748;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .backtest-form h3 {
+            color: #63b3ed;
+            margin-bottom: 15px;
+        }
+        
+        .portfolio-card {
+            background: #2d3748;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #48bb78;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📈 株価分析ツール</h1>
+            <p style="color: #ff6b6b; font-weight: bold; margin-top: 10px;">
+                🔍 DEBUG: v7.0統合版正常動作中 (2025-08-29 22:05) - 3つのモード機能統合済み
+            </p>
+        <p>テクニカル・ファンダメンタル分析とチャート表示</p>
+    </div>
+
+    <div class="analysis-form">
+        <div class="input-group">
+            <label>📈 分析対象銘柄を選択</label>
+            
+            <div class="select-all-controls">
+                <button type="button" class="select-btn" onclick="selectAll()">すべて選択</button>
+                <button type="button" class="select-btn" onclick="selectNone()">選択解除</button>
+                <button type="button" class="select-btn" onclick="showAddStockForm()" style="background: #48bb78;">➕ 銘柄追加</button>
+                <button type="button" class="select-btn" onclick="toggleEditMode()" id="edit-mode-btn">✏️ 編集モード</button>
+            </div>
+            
+            <!-- 銘柄追加フォーム -->
+            <div id="add-stock-form" style="display: none; background: #4a5568; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                <h4 style="margin: 0 0 10px 0; color: #ffffff;">新しい銘柄を追加</h4>
+                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 10px; align-items: end;">
+                    <div>
+                        <label style="font-size: 12px; color: #a0aec0;">銘柄コード</label>
+                        <input type="text" id="new-ticker" placeholder="例: 1234" maxlength="4" style="width: 100%; padding: 8px; background: #374151; border: 1px solid #4a5568; color: #fff; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #a0aec0;">企業名</label>
+                        <input type="text" id="new-company" placeholder="例: サンプル株式会社" style="width: 100%; padding: 8px; background: #374151; border: 1px solid #4a5568; color: #fff; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #a0aec0;">業界</label>
+                        <input type="text" id="new-industry" placeholder="例: IT・サービス" style="width: 100%; padding: 8px; background: #374151; border: 1px solid #4a5568; color: #fff; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <button type="button" onclick="addStock()" style="background: #48bb78; padding: 8px 16px;">追加</button>
+                        <button type="button" onclick="hideAddStockForm()" style="background: #e53e3e; padding: 8px 16px; margin-left: 5px;">キャンセル</button>
+                    </div>
+                </div>
+            </div>
+            
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">選択</th>
+                        <th style="width: 80px;">コード</th>
+                        <th>企業名</th>
+                        <th>業界</th>
+                        <th id="delete-header" style="width: 60px; display: none;">削除</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-table-body">
+                    <!-- 動的に生成されるテーブル行 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="input-group">
+            <label for="period">分析期間</label>
+            <select id="period">
+                <option value="3mo">3ヶ月</option>
+                <option value="6mo" selected>6ヶ月</option>
+                <option value="1y">1年</option>
+            </select>
+        </div>
+        
+        <button onclick="analyzeStock()" id="analyze-btn">分析実行</button>
+    </div>
+
+    <div id="results-container" class="results-container">
+        <!-- 分析結果がここに表示されます -->
+    </div>
+
+    <script>
+        async function analyzeStock() {
+            console.log('🔍 [DEBUG] analyzeStock function called');
+            const periodElement = document.getElementById('period');
+            if (!periodElement) {
+                console.error('❌ [DEBUG] Period element not found!');
+                alert('期間選択要素が見つかりません');
+                return;
+            }
+            const period = periodElement.value;
+            console.log('🔍 [DEBUG] Period selected:', period);
+            const button = document.getElementById('analyze-btn');
+            const resultsContainer = document.getElementById('results-container');
+            
+            // チェックされた銘柄を取得
+            console.log('🔍 [DEBUG] Getting checked checkboxes...');
+            const checkboxes = document.querySelectorAll('.stock-checkbox:checked');
+            console.log('🔍 [DEBUG] Found checkboxes:', checkboxes.length);
+            const tickers = Array.from(checkboxes).map(cb => cb.value);
+            console.log('🔍 [DEBUG] Selected tickers:', tickers);
+            
+            if (tickers.length === 0) {
+                console.log('❌ [DEBUG] No tickers selected');
+                alert('分析する銘柄を選択してください');
+                return;
+            }
+            
+            console.log('✅ [DEBUG] Validation passed, starting analysis...');
+            
+            if (tickers.length > 10) {
+                alert('一度に分析できるのは最大10銘柄までです');
+                return;
+            }
+            
+            // ローディング状態
+            button.textContent = `${tickers.length}銘柄分析中...`;
+            button.disabled = true;
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = '<div class="loading">📊 複数銘柄を並列分析中...</div>';
+            
+            try {
+                console.log(`🚀 Starting parallel analysis for ${tickers.length} tickers:`, tickers);
+                
+                // 並列でAPIリクエスト実行
+                const analysisPromises = tickers.map(async ticker => {
+                    try {
+                        const response = await fetch('/analyze', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ticker: ticker,
+                                period: period
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            return { ticker, data: result.data, success: true };
+                        } else {
+                            throw new Error(result.error || 'Analysis failed');
+                        }
+                    } catch (error) {
+                        console.error(`❌ Analysis failed for ${ticker}:`, error);
+                        return { ticker, error: error.message, success: false };
+                    }
+                });
+                
+                // すべての分析が完了するまで待機
+                const results = await Promise.all(analysisPromises);
+                console.log('📊 All analysis completed:', results);
+                
+                // 結果を表示
+                displayMultipleResults(results);
+                
+            } catch (error) {
+                console.error('❌ Analysis error:', error);
+                resultsContainer.innerHTML = `<div class="error">❌ エラー: ${error.message}</div>`;
+            } finally {
+                button.textContent = '分析実行';
+                button.disabled = false;
+            }
+        }
+        
+        function displayMultipleResults(results) {
+            const resultsContainer = document.getElementById('results-container');
+            
+            // 成功と失敗を分ける
+            const successful = results.filter(r => r.success);
+            const failed = results.filter(r => !r.success);
+            
+            let html = '';
+            
+            // 統計情報
+            if (results.length > 1) {
+                html += `
+                    <div style="background: #2d3748; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                        <h3 style="margin: 0; color: #ffffff;">📊 分析サマリー</h3>
+                        <p style="margin: 5px 0; color: #a0aec0;">
+                            成功: ${successful.length}銘柄 | 失敗: ${failed.length}銘柄 | 合計: ${results.length}銘柄
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // 成功した分析結果を表示
+            successful.forEach(result => {
+                const { ticker, data } = result;
+                const { technical, fundamental, stock_info } = data;
+                
+                // シグナル情報を取得
+                const rsiSignal = technical.signals?.rsi_signal || technical.rsi_signal || 'neutral';
+                const maSignal = technical.signals?.ma_signal || technical.ma_signal || 'neutral';
+                const goldenCross = technical.signals?.golden_cross || technical.golden_cross || false;
+                const fundamentalScore = fundamental.overall_assessment?.total_score || 0;
+                const recommendation = fundamental.overall_assessment?.recommendation || 'hold';
+                
+                html += `
+                    <div class="stock-card">
+                        <div class="stock-header">
+                            📈 ${ticker} - ${stock_info.company_name || ''}
+                            <span style="margin-left: auto; font-size: 18px;">現在価格: ¥${(stock_info.current_price || 0).toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="signals-grid">
+                            <div class="signal-item">
+                                <span class="signal-label">RSI (${technical.latest_rsi?.toFixed(1) || 'N/A'})</span>
+                                <span class="signal-value signal-${rsiSignal}">${getSignalText(rsiSignal)}</span>
+                            </div>
+                            
+                            <div class="signal-item">
+                                <span class="signal-label">移動平均線</span>
+                                <span class="signal-value signal-${maSignal}">${getSignalText(maSignal)}</span>
+                            </div>
+                            
+                            <div class="signal-item">
+                                <span class="signal-label">ゴールデンクロス</span>
+                                <span class="signal-value signal-${goldenCross ? 'buy' : 'neutral'}">${goldenCross ? '発生中' : 'なし'}</span>
+                            </div>
+                            
+                            <div class="signal-item">
+                                <span class="signal-label">ファンダメンタルスコア</span>
+                                <span class="signal-value signal-${getScoreColor(fundamentalScore)}">${fundamentalScore}/100</span>
+                            </div>
+                            
+                            <div class="signal-item">
+                                <span class="signal-label">投資判断</span>
+                                <span class="signal-value signal-${recommendation === 'buy' ? 'buy' : recommendation === 'sell' ? 'sell' : 'neutral'}">${getRecommendationText(recommendation)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container" id="chart-${ticker}">
+                            <div class="loading">📊 チャート作成中...</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 失敗した分析結果を表示
+            failed.forEach(result => {
+                html += `
+                    <div class="stock-card" style="border: 1px solid #f56565;">
+                        <div class="stock-header" style="color: #f56565;">
+                            ❌ ${result.ticker} - 分析失敗
+                        </div>
+                        <div class="error" style="margin: 10px 0;">
+                            エラー: ${result.error}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 3つのモード表示機能を追加
+            const modeButtonsHtml = `
+                <div class="mode-buttons" style="margin: 20px 0; text-align: center;">
+                    <button onclick="showInvestmentMode()" class="mode-btn active" id="investment-mode-btn">
+                        📊 投資判断
+                    </button>
+                    <button onclick="showSwingMode()" class="mode-btn" id="swing-mode-btn">
+                        📈 スイング分析
+                    </button>
+                    <button onclick="showBacktestMode()" class="mode-btn" id="backtest-mode-btn">
+                        ⚡ テスト結果
+                    </button>
+                    <button onclick="showPortfolioMode()" class="mode-btn" id="portfolio-mode-btn">
+                        💼 ポートフォリオ
+                    </button>
+                </div>
+                
+                <div id="investment-content" class="mode-content">${html}</div>
+                <div id="swing-content" class="mode-content" style="display: none;">
+                    <div class="loading">📈 スイング分析チャートを読み込み中...</div>
+                </div>
+                <div id="backtest-content" class="mode-content" style="display: none;">
+                    <div class="loading">⚡ バックテストデータを読み込み中...</div>
+                </div>
+                <div id="portfolio-content" class="mode-content" style="display: none;">
+                    <div class="loading">💼 ポートフォリオデータを読み込み中...</div>
+                </div>
+            `;
+            
+            resultsContainer.innerHTML = modeButtonsHtml;
+            
+            // 成功した銘柄のチャートを順次作成（投資判断モード用）
+            successful.forEach((result, index) => {
+                setTimeout(() => {
+                    console.log(`🎨 Creating chart for ${result.ticker} (${index + 1}/${successful.length})`);
+                    createChart(result.ticker, result.data.technical);
+                }, index * 200); // 少し間隔を空けてチャート作成
+            });
+            
+            // グローバル変数として分析結果を保存
+            window.currentAnalysisResults = { successful, failed };
+        }
+        
+        // 単一銘柄用の既存関数も残す（互換性のため）
+        function displayResults(ticker, data) {
+            displayMultipleResults([{ ticker, data, success: true }]);
+        }
+        
+        // 3つのモード切り替え機能
+        function showInvestmentMode() {
+            console.log('📊 Switching to Investment Mode');
+            showModeContent('investment');
+            setActiveButton('investment-mode-btn');
+        }
+        
+        function showSwingMode() {
+            console.log('📈 Switching to Swing Analysis Mode');
+            showModeContent('swing');
+            setActiveButton('swing-mode-btn');
+            loadSwingContent();
+        }
+        
+        function showBacktestMode() {
+            console.log('⚡ Switching to Backtest Mode');
+            showModeContent('backtest');
+            setActiveButton('backtest-mode-btn');
+            loadBacktestContent();
+        }
+        
+        function showPortfolioMode() {
+            console.log('💼 Switching to Portfolio Mode');
+            showModeContent('portfolio');
+            setActiveButton('portfolio-mode-btn');
+            loadPortfolioContent();
+        }
+        
+        function showModeContent(mode) {
+            // 全てのコンテンツを非表示
+            const contents = ['investment-content', 'swing-content', 'backtest-content', 'portfolio-content'];
+            contents.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.style.display = 'none';
+            });
+            
+            // 選択されたコンテンツを表示
+            const targetContent = document.getElementById(`${mode}-content`);
+            if (targetContent) {
+                targetContent.style.display = 'block';
+            }
+        }
+        
+        function setActiveButton(activeId) {
+            // 全てのボタンからactiveクラスを削除
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // 選択されたボタンにactiveクラスを追加
+            const activeButton = document.getElementById(activeId);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+        
+        // バックテストコンテンツ読み込み
+        function loadBacktestContent() {
+            const backtestContent = document.getElementById('backtest-content');
+            if (!backtestContent) return;
+            
+            const currentResults = window.currentAnalysisResults;
+            if (!currentResults || !currentResults.successful.length) {
+                backtestContent.innerHTML = '<div class="error">❌ 分析結果がありません。先に株価分析を実行してください。</div>';
+                return;
+            }
+            
+            const firstTicker = currentResults.successful[0].ticker;
+            const backtestHtml = `
+                <div class="backtest-form">
+                    <h3>⚡ バックテスト設定</h3>
+                    <div class="input-group">
+                        <label>対象銘柄:</label>
+                        <select id="backtest-ticker">
+                            ${currentResults.successful.map(result => 
+                                `<option value="${result.ticker}">${result.ticker}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>期間:</label>
+                        <select id="backtest-period">
+                            <option value="3mo">3ヶ月</option>
+                            <option value="6mo" selected>6ヶ月</option>
+                            <option value="1y">1年</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>戦略:</label>
+                        <select id="backtest-strategy">
+                            <option value="rsi">RSI戦略</option>
+                            <option value="ma_cross">移動平均クロス</option>
+                            <option value="combo" selected>複合戦略</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>初期資金:</label>
+                        <select id="backtest-capital">
+                            <option value="500000">50万円</option>
+                            <option value="1000000" selected>100万円</option>
+                            <option value="3000000">300万円</option>
+                        </select>
+                    </div>
+                    <button onclick="runBacktest()" class="analyze-btn">🚀 バックテスト実行</button>
+                </div>
+                <div id="backtest-results">
+                    <div class="info">バックテスト設定を選択して実行ボタンを押してください</div>
+                </div>
+            `;
+            backtestContent.innerHTML = backtestHtml;
+        }
+        
+        // ポートフォリオコンテンツ読み込み
+        function loadPortfolioContent() {
+            const portfolioContent = document.getElementById('portfolio-content');
+            if (!portfolioContent) return;
+            
+            // ポートフォリオUIのHTMLを生成
+            const portfolioHtml = `
+                <div class="portfolio-container">
+                    <div class="portfolio-header">
+                        <h3>💼 ポートフォリオ管理システム</h3>
+                        <div class="portfolio-actions">
+                            <button onclick="showAddStockModal()" class="add-stock-btn">
+                                ➕ 保有株追加
+                            </button>
+                            <button onclick="refreshPortfolio()" class="refresh-btn">
+                                🔄 更新
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- ポートフォリオサマリー -->
+                    <div class="portfolio-summary" id="portfolio-summary">
+                        <div class="loading">📊 ポートフォリオサマリーを読み込み中...</div>
+                    </div>
+                    
+                    <!-- タブ切り替え -->
+                    <div class="portfolio-tabs">
+                        <button class="portfolio-tab-btn active" onclick="showPortfolioTab('holdings')">
+                            📈 保有銘柄
+                        </button>
+                        <button class="portfolio-tab-btn" onclick="showPortfolioTab('watchlist')">
+                            👁️ ウォッチリスト
+                        </button>
+                        <button class="portfolio-tab-btn" onclick="showPortfolioTab('alerts')">
+                            🔔 アラート
+                        </button>
+                        <button class="portfolio-tab-btn" onclick="showPortfolioTab('notes')">
+                            📝 投資ノート
+                        </button>
+                    </div>
+                    
+                    <!-- 保有銘柄タブ -->
+                    <div id="holdings-tab" class="portfolio-tab-content active">
+                        <div id="holdings-list" class="holdings-container">
+                            <div class="loading">📈 保有銘柄を読み込み中...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- ウォッチリストタブ -->
+                    <div id="watchlist-tab" class="portfolio-tab-content">
+                        <div class="watchlist-header">
+                            <button onclick="showAddWatchModal()" class="add-watch-btn">
+                                ➕ 銘柄追加
+                            </button>
+                        </div>
+                        <div id="watchlist-content">
+                            <div class="loading">👁️ ウォッチリストを読み込み中...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- アラートタブ -->
+                    <div id="alerts-tab" class="portfolio-tab-content">
+                        <div id="alerts-content">
+                            <div class="loading">🔔 アラートを読み込み中...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 投資ノートタブ -->
+                    <div id="notes-tab" class="portfolio-tab-content">
+                        <div class="notes-header">
+                            <button onclick="showAddNoteModal()" class="add-note-btn">
+                                ➕ ノート追加
+                            </button>
+                        </div>
+                        <div id="notes-content">
+                            <div class="loading">📝 投資ノートを読み込み中...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- モーダルウィンドウ用コンテナ -->
+                    <div id="portfolio-modals"></div>
+                </div>
+                
+                <style>
+                .portfolio-container {
+                    background: #1f2937;
+                    border-radius: 10px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }
+                
+                .portfolio-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+                
+                .portfolio-header h3 {
+                    color: #3b82f6;
+                    margin: 0;
+                }
+                
+                .portfolio-actions {
+                    display: flex;
+                    gap: 10px;
+                }
+                
+                .add-stock-btn, .refresh-btn, .add-watch-btn, .add-note-btn {
+                    background: #3b82f6;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: background 0.3s;
+                }
+                
+                .add-stock-btn:hover, .refresh-btn:hover, .add-watch-btn:hover, .add-note-btn:hover {
+                    background: #2563eb;
+                }
+                
+                .portfolio-summary {
+                    background: #374151;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                }
+                
+                .portfolio-tabs {
+                    display: flex;
+                    border-bottom: 1px solid #4b5563;
+                    margin-bottom: 20px;
+                }
+                
+                .portfolio-tab-btn {
+                    background: none;
+                    border: none;
+                    color: #9ca3af;
+                    padding: 12px 20px;
+                    cursor: pointer;
+                    transition: color 0.3s, border-bottom 0.3s;
+                    border-bottom: 2px solid transparent;
+                }
+                
+                .portfolio-tab-btn.active {
+                    color: #3b82f6;
+                    border-bottom-color: #3b82f6;
+                }
+                
+                .portfolio-tab-btn:hover {
+                    color: #e5e7eb;
+                }
+                
+                .portfolio-tab-content {
+                    display: none;
+                }
+                
+                .portfolio-tab-content.active {
+                    display: block;
+                }
+                
+                .holdings-container {
+                    background: #374151;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                
+                .watchlist-header, .notes-header {
+                    margin-bottom: 15px;
+                }
+                
+                .loading {
+                    text-align: center;
+                    padding: 20px;
+                    color: #9ca3af;
+                }
+                </style>
+            `;
+            
+            portfolioContent.innerHTML = portfolioHtml;
+            
+            // ポートフォリオデータを読み込み
+            initializePortfolio();
+        }
+        
+        // スイング分析コンテンツ読み込み
+        function loadSwingContent() {
+            const swingContent = document.getElementById('swing-content');
+            if (!swingContent) return;
+            
+            const currentResults = window.currentAnalysisResults;
+            if (!currentResults || !currentResults.successful.length) {
+                swingContent.innerHTML = '<div class="error">❌ 分析結果がありません。先に株価分析を実行してください。</div>';
+                return;
+            }
+            
+            // 6ヶ月間のスイング分析チャート生成
+            swingContent.innerHTML = '<div class="loading">📈 スイング分析チャートを生成中...</div>';
+            generateSwingChart();
+        }
+        
+        // スイング分析チャート生成機能
+        async function generateSwingChart() {
+            const currentResults = window.currentAnalysisResults;
+            if (!currentResults || !currentResults.successful.length) return;
+            
+            const firstTicker = currentResults.successful[0].ticker;
+            
+            try {
+                const response = await fetch('/swing_analysis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker: firstTicker })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderSwingChart(result.data, firstTicker);
+                } else {
+                    document.getElementById('swing-content').innerHTML = 
+                        `<div class="error">❌ エラー: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Swing chart generation error:', error);
+                document.getElementById('swing-content').innerHTML = 
+                    `<div class="error">❌ チャート生成エラー: ${error.message}</div>`;
+            }
+        }
+        
+        // スイング分析チャート表示機能
+        function renderSwingChart(data, ticker) {
+            const swingContent = document.getElementById('swing-content');
+            
+            // チャートコンテナを作成
+            const chartHtml = `
+                <div class="swing-analysis-container">
+                    <h3 style="color: #2563eb; margin-bottom: 20px;">
+                        📈 ${ticker} - 6ヶ月スイング分析チャート
+                    </h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <!-- メインチャート: 価格 + 移動平均 + ボリンジャーバンド + 出来高 -->
+                        <div id="swing-main-chart" style="height: 600px;"></div>
+                        
+                        <!-- サブチャート: RSI -->
+                        <div id="swing-rsi-chart" style="height: 150px;"></div>
+                        
+                        <!-- サブチャート: MACD -->
+                        <div id="swing-macd-chart" style="height: 150px;"></div>
+                        
+                        <!-- サブチャート: ATR -->
+                        <div id="swing-atr-chart" style="height: 150px;"></div>
+                    </div>
+                    
+                    <!-- シグナルサマリー -->
+                    <div class="signals-summary" style="margin-top: 20px;">
+                        <h4>🎯 検出されたシグナル</h4>
+                        <div id="swing-signals-list"></div>
+                    </div>
+                </div>
+            `;
+            
+            swingContent.innerHTML = chartHtml;
+            
+            // Plotlyでチャートを描画
+            createSwingMainChart(data, ticker);
+            createSwingRSIChart(data, ticker);
+            createSwingMACDChart(data, ticker);
+            createSwingATRChart(data, ticker);
+            updateSwingSignalsDisplay(data.signals);
+        }
+        
+        // バックテスト実行機能
+        async function runBacktest() {
+            const ticker = document.getElementById('backtest-ticker')?.value;
+            const period = document.getElementById('backtest-period')?.value || '6mo';
+            const strategy = document.getElementById('backtest-strategy')?.value || 'combo';
+            const capital = parseInt(document.getElementById('backtest-capital')?.value || '1000000');
+            
+            if (!ticker) {
+                alert('対象銘柄を選択してください');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('backtest-results');
+            resultsDiv.innerHTML = '<div class="loading">⚡ バックテスト実行中...</div>';
+            
+            try {
+                console.log('🚀 Starting backtest for:', { ticker, period, strategy, capital });
+                
+                const response = await fetch('/backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ticker: ticker.replace('.T', ''),
+                        start_date: getDateXMonthsAgo(getPeriodMonths(period)),
+                        end_date: new Date().toISOString().split('T')[0],
+                        strategy: strategy,
+                        initial_capital: capital
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('⚡ Backtest result:', result);
+                
+                if (result.success) {
+                    displayBacktestResults(result.data);
+                } else {
+                    resultsDiv.innerHTML = `<div class="error">❌ バックテストエラー: ${result.error}</div>`;
+                }
+                
+            } catch (error) {
+                console.error('❌ Backtest error:', error);
+                resultsDiv.innerHTML = `<div class="error">❌ バックテスト実行エラー: ${error.message}</div>`;
+            }
+        }
+        
+        // バックテスト結果表示（改善版）
+        function displayBacktestResults(data) {
+            const backtest = data.backtest_result;
+            const metrics = data.detailed_metrics;
+            
+            // 安全な数値取得
+            const safeNum = (val, defaultVal = 0) => (val !== undefined && val !== null && !isNaN(val) && isFinite(val)) ? val : defaultVal;
+            const safeFormat = (val, decimals = 2) => safeNum(val).toFixed(decimals);
+            const safeCurrency = (val) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(safeNum(val));
+            
+            // 期間計算の修正
+            const startDate = data.chart_data?.dates?.[0] || 'N/A';
+            const endDate = data.chart_data?.dates?.[data.chart_data?.dates?.length - 1] || 'N/A';
+            
+            const html = `
+                <div class="stock-card">
+                    <div class="stock-header">
+                        ⚡ バックテスト結果 - ${data.strategy_info?.name || '戦略'}
+                    </div>
+                    
+                    <div class="signals-grid">
+                        <div class="signal-item">
+                            <span class="signal-label">総リターン</span>
+                            <span class="signal-value signal-${safeNum(backtest.performance?.total_return_pct) > 0 ? 'buy' : 'sell'}">
+                                ${safeFormat(backtest.performance?.total_return_pct)}%
+                            </span>
+                        </div>
+                        
+                        <div class="signal-item">
+                            <span class="signal-label">勝率</span>
+                            <span class="signal-value signal-${safeNum(backtest.performance?.win_rate) > 50 ? 'buy' : 'neutral'}">
+                                ${safeFormat(backtest.performance?.win_rate, 1)}%
+                            </span>
+                        </div>
+                        
+                        <div class="signal-item">
+                            <span class="signal-label">取引回数</span>
+                            <span class="signal-value signal-neutral">
+                                ${safeNum(backtest.trades_count)}回
+                            </span>
+                        </div>
+                        
+                        <div class="signal-item">
+                            <span class="signal-label">最大ドローダウン</span>
+                            <span class="signal-value signal-${Math.abs(safeNum(backtest.risk_metrics?.max_drawdown)) < 10 ? 'buy' : 'sell'}">
+                                ${safeFormat(backtest.risk_metrics?.max_drawdown)}%
+                            </span>
+                        </div>
+                        
+                        <div class="signal-item">
+                            <span class="signal-label">シャープレシオ</span>
+                            <span class="signal-value signal-${safeNum(backtest.risk_metrics?.sharpe_ratio) > 1 ? 'buy' : 'neutral'}">
+                                ${safeFormat(backtest.risk_metrics?.sharpe_ratio)}
+                            </span>
+                        </div>
+                        
+                        <div class="signal-item">
+                            <span class="signal-label">市場比較</span>
+                            <span class="signal-value signal-${safeNum(backtest.market_comparison?.alpha) > 0 ? 'buy' : 'neutral'}">
+                                α: ${safeFormat(backtest.market_comparison?.alpha)}%
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #2d3748; border-radius: 8px;">
+                        <h4 style="color: #63b3ed; margin-bottom: 10px;">📊 パフォーマンス評価</h4>
+                        <div style="color: #a0aec0;">
+                            <strong>戦略:</strong> ${data.strategy_info?.description || '複合戦略'}<br>
+                            <strong>期間:</strong> ${startDate} ～ ${endDate}<br>
+                            <strong>初期資金:</strong> ${safeCurrency(metrics?.basic_stats?.initial_capital)}<br>
+                            <strong>最終資産:</strong> ${safeCurrency(metrics?.basic_stats?.final_value)}
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container" id="backtest-chart" style="margin-top: 20px; height: 400px;">
+                        <div class="loading">📈 バックテストチャート作成中...</div>
+                    </div>
+                    
+                    ${data.trades && data.trades.length > 0 ? `
+                        <div style="margin-top: 15px; padding: 15px; background: #2d3748; border-radius: 8px;">
+                            <h4 style="color: #63b3ed; margin-bottom: 10px;">📋 取引履歴 (最新5件)</h4>
+                            ${data.trades.slice(0, 5).map(trade => `
+                                <div style="margin: 8px 0; padding: 8px; background: #374151; border-radius: 4px; font-size: 14px;">
+                                    ${trade.entry_date} ～ ${trade.exit_date} | 
+                                    ${safeNum(trade.entry_price)}円 → ${safeNum(trade.exit_price)}円 | 
+                                    <span style="color: ${safeNum(trade.profit_loss) > 0 ? '#48bb78' : '#f56565'}">
+                                        ${safeNum(trade.profit_loss) > 0 ? '+' : ''}${safeFormat(trade.profit_loss_pct)}%
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('backtest-results').innerHTML = html;
+            
+            // バックテストチャート作成
+            if (data.chart_data && data.chart_data.dates && data.chart_data.prices) {
+                setTimeout(() => {
+                    createBacktestChart(data);
+                }, 100);
+            }
+        }
+        
+        // バックテストチャート作成
+        function createBacktestChart(data) {
+            console.log('📈 Creating backtest chart');
+            
+            if (typeof Plotly === 'undefined') {
+                document.getElementById('backtest-chart').innerHTML = '<div class="error">❌ Plotlyライブラリが読み込まれていません</div>';
+                return;
+            }
+            
+            const chartData = data.chart_data || {};
+            const dates = chartData.dates || [];
+            const prices = chartData.prices || [];
+            const signals = chartData.signals || {};
+            
+            if (dates.length === 0 || prices.length === 0) {
+                document.getElementById('backtest-chart').innerHTML = '<div class="error">❌ チャートデータが利用できません</div>';
+                return;
+            }
+            
+            // チャートデータ作成
+            const traces = [
+                {
+                    x: dates,
+                    y: prices,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '株価',
+                    line: { color: '#4299e1', width: 2 }
+                }
+            ];
+            
+            // 買いシグナル追加
+            if (signals.buy_dates && signals.buy_dates.length > 0) {
+                traces.push({
+                    x: signals.buy_dates,
+                    y: signals.buy_prices,
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: '買い',
+                    marker: { 
+                        color: '#48bb78', 
+                        size: 8,
+                        symbol: 'triangle-up'
+                    }
+                });
+            }
+            
+            // 売りシグナル追加  
+            if (signals.sell_dates && signals.sell_dates.length > 0) {
+                traces.push({
+                    x: signals.sell_dates,
+                    y: signals.sell_prices,
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: '売り',
+                    marker: { 
+                        color: '#f56565', 
+                        size: 8,
+                        symbol: 'triangle-down'
+                    }
+                });
+            }
+            
+            const layout = {
+                title: {
+                    text: `バックテスト結果 - ${data.strategy_info?.name || '戦略'}`,
+                    font: { color: '#ffffff', size: 16 }
+                },
+                xaxis: {
+                    title: '日付',
+                    color: '#ffffff',
+                    gridcolor: '#4a5568'
+                },
+                yaxis: {
+                    title: '株価 (円)',
+                    color: '#ffffff',
+                    gridcolor: '#4a5568'
+                },
+                paper_bgcolor: '#1a202c',
+                plot_bgcolor: '#2d3748',
+                font: { color: '#ffffff' },
+                legend: {
+                    font: { color: '#ffffff' }
+                },
+                margin: { t: 50, r: 50, b: 50, l: 80 }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+                displaylogo: false
+            };
+            
+            Plotly.newPlot('backtest-chart', traces, layout, config);
+        }
+        
+        // ヘルパー関数
+        function getPeriodMonths(period) {
+            switch(period) {
+                case '3mo': return 3;
+                case '6mo': return 6;
+                case '1y': return 12;
+                default: return 6;
+            }
+        }
+        
+        function getDateXMonthsAgo(months) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - months);
+            return date.toISOString().split('T')[0];
+        }
+        
+        function createChart(ticker, technical) {
+            console.log(`🎨 Creating chart for ${ticker}`);
+            
+            if (typeof Plotly === 'undefined') {
+                document.getElementById(`chart-${ticker}`).innerHTML = '<div class="error">❌ Plotlyライブラリが読み込まれていません</div>';
+                return;
+            }
+            
+            const chartData = technical.chart_data || {};
+            const dates = chartData.dates || [];
+            const prices = chartData.prices || [];
+            const sma5 = chartData.sma_5 || [];
+            const sma25 = chartData.sma_25 || [];
+            const volumes = chartData.volume || [];
+            
+            if (dates.length === 0 || prices.length === 0) {
+                document.getElementById(`chart-${ticker}`).innerHTML = '<div class="error">❌ チャートデータが利用できません</div>';
+                return;
+            }
+            
+            // チャートデータ作成
+            const traces = [
+                {
+                    x: dates,
+                    y: prices,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '株価',
+                    line: { color: '#4299e1', width: 2 },
+                    yaxis: 'y1'
+                },
+                {
+                    x: dates,
+                    y: sma5,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'SMA5',
+                    line: { color: '#48bb78', width: 1 },
+                    yaxis: 'y1'
+                },
+                {
+                    x: dates,
+                    y: sma25,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'SMA25',
+                    line: { color: '#ed8936', width: 1 },
+                    yaxis: 'y1'
+                },
+                {
+                    x: dates,
+                    y: volumes,
+                    type: 'bar',
+                    name: '出来高',
+                    marker: { color: 'rgba(66, 153, 225, 0.3)' },
+                    yaxis: 'y2'
+                }
+            ];
+            
+            const layout = {
+                title: {
+                    text: `${ticker} 株価チャート`,
+                    font: { color: '#ffffff', size: 18 }
+                },
+                xaxis: {
+                    title: '日付',
+                    gridcolor: '#4a5568',
+                    tickfont: { color: '#a0aec0' },
+                    titlefont: { color: '#a0aec0' }
+                },
+                yaxis: {
+                    title: '株価 (円)',
+                    side: 'left',
+                    gridcolor: '#4a5568',
+                    tickfont: { color: '#a0aec0' },
+                    titlefont: { color: '#a0aec0' }
+                },
+                yaxis2: {
+                    title: '出来高',
+                    side: 'right',
+                    overlaying: 'y',
+                    gridcolor: '#4a5568',
+                    tickfont: { color: '#a0aec0' },
+                    titlefont: { color: '#a0aec0' }
+                },
+                plot_bgcolor: '#374151',
+                paper_bgcolor: '#374151',
+                font: { color: '#ffffff' },
+                legend: {
+                    font: { color: '#a0aec0' },
+                    bgcolor: 'rgba(55, 65, 81, 0.8)'
+                },
+                margin: { l: 60, r: 60, t: 50, b: 50 },
+                height: 350
+            };
+            
+            const config = {
+                displayModeBar: true,
+                responsive: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d']
+            };
+            
+            // チャート描画
+            Plotly.newPlot(`chart-${ticker}`, traces, layout, config)
+                .then(() => {
+                    console.log(`✅ Chart successfully created for ${ticker}`);
+                })
+                .catch((error) => {
+                    console.error(`❌ Chart creation error for ${ticker}:`, error);
+                    document.getElementById(`chart-${ticker}`).innerHTML = '<div class="error">❌ チャート作成エラー</div>';
+                });
+        }
+        
+        function getSignalText(signal) {
+            switch(signal) {
+                case 'buy': return '買い';
+                case 'sell': return '売り';
+                case 'neutral': return 'ニュートラル';
+                default: return 'N/A';
+            }
+        }
+        
+        function getScoreColor(score) {
+            if (score >= 70) return 'buy';
+            if (score >= 40) return 'neutral';
+            return 'sell';
+        }
+        
+        function getRecommendationText(rec) {
+            switch(rec) {
+                case 'buy': return '買い推奨';
+                case 'sell': return '売り推奨';
+                case 'hold': return '保留';
+                default: return 'N/A';
+            }
+        }
+        
+        // Enterキーで分析実行（テーブル形式では不要）
+        // document.getElementById('ticker').addEventListener('keypress', function(e) {
+        //     if (e.key === 'Enter') {
+        //         analyzeStock();
+        //     }
+        // });
+        
+        // デフォルト銘柄データ
+        const defaultStocks = [
+            {ticker: '8001', company: '伊藤忠商事', industry: '総合商社'},
+            {ticker: '7203', company: 'トヨタ自動車', industry: '自動車'},
+            {ticker: '6758', company: 'ソニーグループ', industry: '電機・IT'},
+            {ticker: '9984', company: 'ソフトバンクグループ', industry: '通信・投資'},
+            {ticker: '8306', company: '三菱UFJフィナンシャル・グループ', industry: '銀行'},
+            {ticker: '4519', company: '中外製薬', industry: '医薬品'},
+            {ticker: '6861', company: 'キーエンス', industry: '精密機器'},
+            {ticker: '2914', company: 'JT（日本たばこ産業）', industry: '食品・たばこ'},
+            {ticker: '4063', company: '信越化学工業', industry: '化学'},
+            {ticker: '6981', company: '村田製作所', industry: '電子部品'}
+        ];
+        
+        // 編集モード状態
+        let isEditMode = false;
+        
+        // ページ読み込み時にテーブル初期化
+        function initializeStockTable() {
+            console.log('🔄 Initializing stock table...');
+            const savedStocks = loadStocksFromStorage();
+            const stocks = savedStocks.length > 0 ? savedStocks : defaultStocks;
+            renderStockTable(stocks);
+            console.log(`✅ Loaded ${stocks.length} stocks`);
+        }
+        
+        // テーブル描画
+        function renderStockTable(stocks) {
+            const tbody = document.getElementById('stock-table-body');
+            tbody.innerHTML = '';
+            
+            stocks.forEach(stock => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-ticker', stock.ticker);
+                
+                row.innerHTML = `
+                    <td><input type="checkbox" class="stock-checkbox" value="${stock.ticker}" ${stock.ticker === '8001' ? 'checked' : ''}></td>
+                    <td>${stock.ticker}</td>
+                    <td>${stock.company}</td>
+                    <td>${stock.industry}</td>
+                    <td class="delete-cell" style="display: ${isEditMode ? 'table-cell' : 'none'};">
+                        <button onclick="deleteStock('${stock.ticker}')" style="background: #e53e3e; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer;">🗑️</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // チェックボックス制御関数
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.stock-checkbox');
+            checkboxes.forEach(cb => cb.checked = true);
+        }
+        
+        function selectNone() {
+            const checkboxes = document.querySelectorAll('.stock-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+        }
+        
+
+        
+        // 編集モード切り替え
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const deleteHeader = document.getElementById('delete-header');
+            const deleteCells = document.querySelectorAll('.delete-cell');
+            const editBtn = document.getElementById('edit-mode-btn');
+            
+            if (isEditMode) {
+                deleteHeader.style.display = 'table-cell';
+                deleteCells.forEach(cell => cell.style.display = 'table-cell');
+                editBtn.textContent = '✅ 編集完了';
+                editBtn.style.background = '#48bb78';
+            } else {
+                deleteHeader.style.display = 'none';
+                deleteCells.forEach(cell => cell.style.display = 'none');
+                editBtn.textContent = '✏️ 編集モード';
+                editBtn.style.background = '#4a5568';
+            }
+        }
+        
+        // 銘柄追加フォーム表示/非表示
+        function showAddStockForm() {
+            document.getElementById('add-stock-form').style.display = 'block';
+            document.getElementById('new-ticker').focus();
+        }
+        
+        function hideAddStockForm() {
+            document.getElementById('add-stock-form').style.display = 'none';
+            document.getElementById('new-ticker').value = '';
+            document.getElementById('new-company').value = '';
+            document.getElementById('new-industry').value = '';
+        }
+        
+        // 銘柄追加
+        function addStock() {
+            const ticker = document.getElementById('new-ticker').value.trim();
+            const company = document.getElementById('new-company').value.trim();
+            const industry = document.getElementById('new-industry').value.trim();
+            
+            if (!ticker || !ticker.match(/^\d{4}$/)) {
+                alert('4桁の銘柄コードを入力してください');
+                return;
+            }
+            
+            if (!company) {
+                alert('企業名を入力してください');
+                return;
+            }
+            
+            if (!industry) {
+                alert('業界を入力してください');
+                return;
+            }
+            
+            const stocks = loadStocksFromStorage();
+            
+            // 重複チェック
+            if (stocks.find(s => s.ticker === ticker)) {
+                alert('この銘柄コードは既に登録されています');
+                return;
+            }
+            
+            // 新しい銘柄を追加
+            stocks.push({ ticker, company, industry });
+            saveStocksToStorage(stocks);
+            renderStockTable(stocks);
+            hideAddStockForm();
+            
+            console.log(`✅ Added new stock: ${ticker} - ${company}`);
+        }
+        
+        // 銘柄削除
+        function deleteStock(ticker) {
+            if (!confirm(`銘柄 ${ticker} を削除しますか？`)) {
+                return;
+            }
+            
+            let stocks = loadStocksFromStorage();
+            stocks = stocks.filter(s => s.ticker !== ticker);
+            saveStocksToStorage(stocks);
+            renderStockTable(stocks);
+            
+            console.log(`🗑️ Deleted stock: ${ticker}`);
+        }
+        
+        // クイック選択関数（削除予定）
+        function setTickers(tickers) {
+            // 互換性のため残す（使用されなくなる）
+        }
+        
+        // ローカルストレージ管理
+        function saveStocksToStorage(stocks) {
+            try {
+                localStorage.setItem('stockAnalysisStocks', JSON.stringify(stocks));
+                console.log('💾 Stocks saved to localStorage');
+            } catch (error) {
+                console.error('❌ Failed to save stocks:', error);
+            }
+        }
+        
+        function loadStocksFromStorage() {
+            try {
+                const saved = localStorage.getItem('stockAnalysisStocks');
+                if (saved) {
+                    const stocks = JSON.parse(saved);
+                    console.log('📁 Stocks loaded from localStorage');
+                    return stocks;
+                }
+            } catch (error) {
+                console.error('❌ Failed to load stocks:', error);
+            }
+            return [];
+        }
+        
+        // スイング分析用Plotlyチャート作成関数群
+        function createSwingMainChart(data, ticker) {
+            const traces = [];
+            
+            // ローソク足チャート
+            traces.push({
+                x: data.dates,
+                open: data.ohlcv.open,
+                high: data.ohlcv.high,
+                low: data.ohlcv.low,
+                close: data.ohlcv.close,
+                type: 'candlestick',
+                name: '価格',
+                yaxis: 'y',
+                increasing: { line: { color: '#26a69a' } },
+                decreasing: { line: { color: '#ef5350' } }
+            });
+            
+            // 移動平均線
+            if (data.indicators.ma_5) {
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.ma_5,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '5日MA',
+                    line: { color: '#ff6b6b', width: 1 },
+                    yaxis: 'y'
+                });
+            }
+            
+            if (data.indicators.ma_25) {
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.ma_25,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '25日MA',
+                    line: { color: '#4ecdc4', width: 2 },
+                    yaxis: 'y'
+                });
+            }
+            
+            if (data.indicators.ma_75) {
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.ma_75,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '75日MA',
+                    line: { color: '#45b7d1', width: 2 },
+                    yaxis: 'y'
+                });
+            }
+            
+            // ボリンジャーバンド
+            if (data.indicators.bb_upper && data.indicators.bb_lower) {
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.bb_upper,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'BB上限',
+                    line: { color: 'rgba(255,0,255,0.3)', width: 1, dash: 'dot' },
+                    yaxis: 'y'
+                });
+                
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.bb_lower,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'BB下限',
+                    line: { color: 'rgba(255,0,255,0.3)', width: 1, dash: 'dot' },
+                    fill: 'tonexty',
+                    fillcolor: 'rgba(255,0,255,0.1)',
+                    yaxis: 'y'
+                });
+            }
+            
+            // 出来高（1.5倍以上は赤色強調）
+            const volumeColors = data.ohlcv.volume.map((vol, i) => {
+                const ratio = data.indicators.volume_ratio?.[i];
+                return ratio && ratio >= 1.5 ? 'red' : 'rgba(100,100,100,0.3)';
+            });
+            
+            traces.push({
+                x: data.dates,
+                y: data.ohlcv.volume,
+                type: 'bar',
+                name: '出来高',
+                marker: { color: volumeColors },
+                yaxis: 'y2'
+            });
+            
+            // 売買シグナルマーカー
+            addSwingSignalMarkers(traces, data);
+            
+            const layout = {
+                title: `${ticker} スイング分析チャート (6ヶ月)`,
+                xaxis: { type: 'date', rangeslider: { visible: false } },
+                yaxis: { title: '価格 (円)', side: 'left', position: 0 },
+                yaxis2: { title: '出来高', side: 'right', overlaying: 'y', position: 1 },
+                height: 600,
+                showlegend: true,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            const config = { responsive: true, displayModeBar: true };
+            Plotly.newPlot('swing-main-chart', traces, layout, config);
+        }
+        
+        function createSwingRSIChart(data, ticker) {
+            const traces = [{
+                x: data.dates,
+                y: data.indicators.rsi,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'RSI',
+                line: { color: '#9c88ff', width: 2 }
+            }];
+            
+            // RSI 30/70 ライン
+            traces.push({
+                x: data.dates,
+                y: Array(data.dates.length).fill(70),
+                type: 'scatter',
+                mode: 'lines',
+                name: '売り閾値(70)',
+                line: { color: 'red', width: 1, dash: 'dash' }
+            });
+            
+            traces.push({
+                x: data.dates,
+                y: Array(data.dates.length).fill(30),
+                type: 'scatter',
+                mode: 'lines',
+                name: '買い閾値(30)',
+                line: { color: 'green', width: 1, dash: 'dash' }
+            });
+            
+            const layout = {
+                title: 'RSI (14日)',
+                xaxis: { type: 'date' },
+                yaxis: { title: 'RSI', range: [0, 100] },
+                height: 150,
+                showlegend: false,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('swing-rsi-chart', traces, layout, { responsive: true });
+        }
+        
+        function createSwingMACDChart(data, ticker) {
+            const traces = [{
+                x: data.dates,
+                y: data.indicators.macd,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'MACD',
+                line: { color: '#4ecdc4', width: 2 }
+            }];
+            
+            if (data.indicators.macd_signal) {
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.macd_signal,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Signal',
+                    line: { color: '#ff6b6b', width: 2 }
+                });
+            }
+            
+            if (data.indicators.macd_histogram) {
+                const histogramColors = data.indicators.macd_histogram.map(val => 
+                    val >= 0 ? 'green' : 'red'
+                );
+                
+                traces.push({
+                    x: data.dates,
+                    y: data.indicators.macd_histogram,
+                    type: 'bar',
+                    name: 'Histogram',
+                    marker: { color: histogramColors, opacity: 0.6 }
+                });
+            }
+            
+            const layout = {
+                title: 'MACD (12,26,9)',
+                xaxis: { type: 'date' },
+                yaxis: { title: 'MACD' },
+                height: 150,
+                showlegend: false,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('swing-macd-chart', traces, layout, { responsive: true });
+        }
+        
+        function createSwingATRChart(data, ticker) {
+            const traces = [{
+                x: data.dates,
+                y: data.atr,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'ATR',
+                line: { color: '#ffa726', width: 2 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(255,167,38,0.2)'
+            }];
+            
+            const layout = {
+                title: 'ATR (14日) - ボラティリティ指標',
+                xaxis: { type: 'date' },
+                yaxis: { title: 'ATR' },
+                height: 150,
+                showlegend: false,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('swing-atr-chart', traces, layout, { responsive: true });
+        }
+        
+        function addSwingSignalMarkers(traces, data) {
+            const allSignals = [
+                ...data.signals.buy_signals.map(s => ({ ...s, type: 'buy' })),
+                ...data.signals.sell_signals.map(s => ({ ...s, type: 'sell' })),
+                ...data.signals.golden_cross.map(s => ({ ...s, type: 'golden' })),
+                ...data.signals.dead_cross.map(s => ({ ...s, type: 'dead' })),
+                ...data.signals.bb_squeeze_break.map(s => ({ ...s, type: 'squeeze' }))
+            ];
+            
+            if (allSignals.length > 0) {
+                traces.push({
+                    x: allSignals.map(s => s.date),
+                    y: allSignals.map(s => s.price),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: '売買シグナル',
+                    marker: {
+                        size: 12,
+                        symbol: allSignals.map(s => s.marker || 'circle'),
+                        color: allSignals.map(s => s.color || 'blue'),
+                        line: { width: 2, color: 'white' }
+                    },
+                    text: allSignals.map(s => `${s.type}: ${s.reason}`),
+                    hovertemplate: '%{text}<br>価格: %{y}円<extra></extra>',
+                    yaxis: 'y'
+                });
+            }
+        }
+        
+        function updateSwingSignalsDisplay(signals) {
+            const signalsContainer = document.getElementById('swing-signals-list');
+            let signalsHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">';
+            
+            const signalTypes = [
+                { key: 'buy_signals', title: '🟢 買いシグナル', color: 'green' },
+                { key: 'sell_signals', title: '🔴 売りシグナル', color: 'red' },
+                { key: 'golden_cross', title: '🌟 ゴールデンクロス', color: 'gold' },
+                { key: 'dead_cross', title: '💀 デッドクロス', color: 'orange' },
+                { key: 'bb_squeeze_break', title: '💎 BBスクイーズブレイク', color: 'purple' }
+            ];
+            
+            signalTypes.forEach(({ key, title, color }) => {
+                if (signals[key] && signals[key].length > 0) {
+                    signalsHtml += `
+                        <div style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; border-left: 4px solid ${color};">
+                            <h5 style="margin: 0 0 5px 0; color: ${color};">${title}</h5>
+                            ${signals[key].map(signal => `
+                                <div style="font-size: 0.9em; margin: 2px 0;">
+                                    ${signal.date}: ${signal.reason} (¥${signal.price})
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            });
+            
+            signalsHtml += '</div>';
+            signalsContainer.innerHTML = signalsHtml;
+        }
+        
+        // ===============================================
+        // ポートフォリオ管理システム JavaScript 関数群
+        // ===============================================
+        
+        // ポートフォリオ初期化
+        async function initializePortfolio() {
+            console.log('📊 Initializing portfolio system...');
+            
+            try {
+                // 並列で各データを読み込み
+                await Promise.all([
+                    loadPortfolioSummary(),
+                    loadHoldings(),
+                    loadWatchlist(),
+                    loadAlerts(),
+                    loadNotes()
+                ]);
+                
+                console.log('✅ Portfolio system initialized successfully');
+            } catch (error) {
+                console.error('❌ Portfolio initialization failed:', error);
+            }
+        }
+        
+        // ポートフォリオタブ切り替え
+        function showPortfolioTab(tabName) {
+            // 全タブボタンの active クラスを削除
+            document.querySelectorAll('.portfolio-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 全タブコンテンツを非表示
+            document.querySelectorAll('.portfolio-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 選択されたタブをアクティブ化
+            const activeTabBtn = document.querySelector(`[onclick="showPortfolioTab('${tabName}')"]`);
+            const activeTabContent = document.getElementById(`${tabName}-tab`);
+            
+            if (activeTabBtn) activeTabBtn.classList.add('active');
+            if (activeTabContent) activeTabContent.classList.add('active');
+            
+            // タブ固有の読み込み処理
+            switch(tabName) {
+                case 'holdings':
+                    loadHoldings();
+                    break;
+                case 'watchlist':
+                    loadWatchlist();
+                    break;
+                case 'alerts':
+                    loadAlerts();
+                    break;
+                case 'notes':
+                    loadNotes();
+                    break;
+            }
+        }
+        
+        // ポートフォリオサマリー読み込み
+        async function loadPortfolioSummary() {
+            const summaryContainer = document.getElementById('portfolio-summary');
+            
+            try {
+                const response = await fetch('/api/portfolio/portfolio');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const portfolioData = result.data.portfolio || result.data;
+                    let totalValue = 0;
+                    let totalCost = 0;
+                    let totalPnL = 0;
+                    
+                    if (Array.isArray(portfolioData) && portfolioData.length > 0) {
+                        portfolioData.forEach(item => {
+                            const currentValue = item.current_price * item.shares;
+                            const cost = item.average_price * item.shares;
+                            totalValue += currentValue;
+                            totalCost += cost;
+                            totalPnL += (currentValue - cost);
+                        });
+                    } else {
+                        console.log('🔍 Portfolio data is empty or not an array:', portfolioData);
+                    }
+                    
+                    const returnPct = totalCost > 0 ? ((totalPnL / totalCost) * 100) : 0;
+                    
+                    summaryContainer.innerHTML = `
+                        <div class="summary-cards">
+                            <div class="summary-card">
+                                <h4>💰 現在価値</h4>
+                                <div class="value-large">¥${totalValue.toLocaleString()}</div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>📊 投資元本</h4>
+                                <div class="value-medium">¥${totalCost.toLocaleString()}</div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>${totalPnL >= 0 ? '📈' : '📉'} 損益</h4>
+                                <div class="value-medium ${totalPnL >= 0 ? 'profit' : 'loss'}">
+                                    ¥${totalPnL.toLocaleString()}
+                                </div>
+                                <div class="value-small ${totalPnL >= 0 ? 'profit' : 'loss'}">
+                                    ${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>📋 保有銘柄数</h4>
+                                <div class="value-medium">${portfolio.length}銘柄</div>
+                            </div>
+                        </div>
+                        
+                        <style>
+                        .summary-cards {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                            gap: 15px;
+                        }
+                        
+                        .summary-card {
+                            background: #4b5563;
+                            padding: 15px;
+                            border-radius: 8px;
+                            text-align: center;
+                        }
+                        
+                        .summary-card h4 {
+                            margin: 0 0 10px 0;
+                            color: #d1d5db;
+                            font-size: 14px;
+                        }
+                        
+                        .value-large {
+                            font-size: 28px;
+                            font-weight: bold;
+                            color: #3b82f6;
+                        }
+                        
+                        .value-medium {
+                            font-size: 20px;
+                            font-weight: bold;
+                            color: #e5e7eb;
+                        }
+                        
+                        .value-small {
+                            font-size: 14px;
+                            margin-top: 5px;
+                        }
+                        
+                        .profit { color: #10b981; }
+                        .loss { color: #ef4444; }
+                        </style>
+                    `;
+                } else {
+                    summaryContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h4>📈 ポートフォリオは空です</h4>
+                            <p>「保有株追加」ボタンから銘柄を登録してください</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Summary load error:', error);
+                summaryContainer.innerHTML = '<div class="error">サマリー読み込みエラー</div>';
+            }
+        }
+        
+        // 保有銘柄読み込み
+        async function loadHoldings() {
+            const holdingsContainer = document.getElementById('holdings-list');
+            
+            try {
+                const response = await fetch('/api/portfolio/portfolio');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const portfolioData = result.data.portfolio || result.data;
+                    if (Array.isArray(portfolioData) && portfolioData.length > 0) {
+                    const holdingsTable = `
+                        <table class="holdings-table">
+                            <thead>
+                                <tr>
+                                    <th>銘柄</th>
+                                    <th>保有数</th>
+                                    <th>平均単価</th>
+                                    <th>現在価格</th>
+                                    <th>評価額</th>
+                                    <th>損益</th>
+                                    <th>損益率</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${portfolioData.map(item => {
+                                    const currentValue = item.current_price * item.shares;
+                                    const cost = item.average_price * item.shares;
+                                    const pnl = currentValue - cost;
+                                    const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+                                    
+                                    return `
+                                        <tr>
+                                            <td>
+                                                <div class="stock-info">
+                                                    <strong>${item.ticker}</strong>
+                                                    <div class="company-name">${item.company_name || ''}</div>
+                                                </div>
+                                            </td>
+                                            <td>${item.shares.toLocaleString()}</td>
+                                            <td>¥${item.average_price.toLocaleString()}</td>
+                                            <td>¥${item.current_price.toLocaleString()}</td>
+                                            <td>¥${currentValue.toLocaleString()}</td>
+                                            <td class="${pnl >= 0 ? 'profit' : 'loss'}">
+                                                ¥${pnl.toLocaleString()}
+                                            </td>
+                                            <td class="${pnl >= 0 ? 'profit' : 'loss'}">
+                                                ${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%
+                                            </td>
+                                            <td>
+                                                <button onclick="editHolding(${item.id})" class="edit-btn">✏️</button>
+                                                <button onclick="deleteHolding(${item.id})" class="delete-btn">🗑️</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        
+                        <style>
+                        .holdings-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            color: #e5e7eb;
+                        }
+                        
+                        .holdings-table th {
+                            background: #4b5563;
+                            padding: 12px 8px;
+                            text-align: left;
+                            font-weight: 600;
+                            border-bottom: 2px solid #6b7280;
+                        }
+                        
+                        .holdings-table td {
+                            padding: 10px 8px;
+                            border-bottom: 1px solid #4b5563;
+                        }
+                        
+                        .holdings-table tr:hover {
+                            background: #4b5563;
+                        }
+                        
+                        .stock-info .company-name {
+                            font-size: 12px;
+                            color: #9ca3af;
+                        }
+                        
+                        .edit-btn, .delete-btn {
+                            background: none;
+                            border: none;
+                            cursor: pointer;
+                            font-size: 16px;
+                            margin: 0 2px;
+                            padding: 4px;
+                        }
+                        
+                        .edit-btn:hover { opacity: 0.7; }
+                        .delete-btn:hover { opacity: 0.7; }
+                        </style>
+                    `;
+                    
+                    holdingsContainer.innerHTML = holdingsTable;
+                    } else {
+                        holdingsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <h4>📈 保有銘柄がありません</h4>
+                                <p>「保有株追加」ボタンから銘柄を登録してください</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    holdingsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h4>📈 保有銘柄がありません</h4>
+                            <p>「保有株追加」ボタンから銘柄を登録してください</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Holdings load error:', error);
+                holdingsContainer.innerHTML = '<div class="error">保有銘柄読み込みエラー</div>';
+            }
+        }
+        
+        // ウォッチリスト読み込み
+        async function loadWatchlist() {
+            const watchlistContainer = document.getElementById('watchlist-content');
+            watchlistContainer.innerHTML = '<div class="loading">👁️ ウォッチリストを読み込み中...</div>';
+            
+            try {
+                const response = await fetch('/api/portfolio/watchlist');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const watchlistData = Array.isArray(result.data) ? result.data : [];
+                    if (watchlistData.length > 0) {
+                        const watchlistHtml = watchlistData.map(item => `
+                        <div class="watchlist-item">
+                            <div class="watchlist-info">
+                                <div class="ticker-name">
+                                    <strong>${item.ticker}</strong>
+                                    <span class="company-name">${item.company_name || ''}</span>
+                                </div>
+                                <div class="target-price">
+                                    目標価格: ¥${item.target_price?.toLocaleString() || 'N/A'}
+                                </div>
+                                <div class="category">
+                                    カテゴリ: ${item.category || '未分類'}
+                                </div>
+                            </div>
+                            <div class="watchlist-actions">
+                                <button onclick="addToPortfolio('${item.ticker}')" class="add-portfolio-btn">📈 追加</button>
+                                <button onclick="removeFromWatchlist(${item.id})" class="remove-btn">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    watchlistContainer.innerHTML = `
+                        <div class="watchlist-container">${watchlistHtml}</div>
+                        
+                        <style>
+                        .watchlist-item {
+                            background: #4b5563;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-bottom: 10px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+                        
+                        .watchlist-info .ticker-name {
+                            margin-bottom: 5px;
+                        }
+                        
+                        .watchlist-info .company-name {
+                            margin-left: 10px;
+                            color: #9ca3af;
+                            font-size: 14px;
+                        }
+                        
+                        .target-price, .category {
+                            font-size: 13px;
+                            color: #d1d5db;
+                            margin-bottom: 3px;
+                        }
+                        
+                        .watchlist-actions {
+                            display: flex;
+                            gap: 8px;
+                        }
+                        
+                        .add-portfolio-btn, .remove-btn {
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            padding: 6px 12px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        }
+                        
+                        .remove-btn {
+                            background: #ef4444;
+                        }
+                        </style>
+                    `;
+                    } else {
+                        watchlistContainer.innerHTML = `
+                            <div class="empty-state">
+                                <h4>👁️ ウォッチリストは空です</h4>
+                                <p>「銘柄追加」ボタンから注目銘柄を登録してください</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Watchlist load error:', error);
+                watchlistContainer.innerHTML = '<div class="error">ウォッチリスト読み込みエラー</div>';
+            }
+        }
+        
+        // アラート・ノート読み込み（プレースホルダー）
+        async function loadAlerts() {
+            document.getElementById('alerts-content').innerHTML = `
+                <div class="feature-placeholder">
+                    <h4>🔔 価格アラート機能</h4>
+                    <p>目標価格・損切りライン設定機能は今後実装予定です</p>
+                </div>
+            `;
+        }
+        
+        async function loadNotes() {
+            document.getElementById('notes-content').innerHTML = `
+                <div class="feature-placeholder">
+                    <h4>📝 投資ノート機能</h4>
+                    <p>投資判断・分析メモ機能は今後実装予定です</p>
+                </div>
+            `;
+        }
+        
+        // ポートフォリオ更新
+        async function refreshPortfolio() {
+            console.log('🔄 Refreshing portfolio...');
+            await initializePortfolio();
+        }
+        
+        // モーダル関数（プレースホルダー）
+        function showAddStockModal() {
+            alert('保有株追加機能は次のアップデートで実装予定です');
+        }
+        
+        function showAddWatchModal() {
+            alert('ウォッチリスト追加機能は次のアップデートで実装予定です');
+        }
+        
+        function showAddNoteModal() {
+            alert('投資ノート追加機能は次のアップデートで実装予定です');
+        }
+        
+        // 操作関数（プレースホルダー）
+        function editHolding(id) {
+            alert(`保有銘柄編集機能（ID: ${id}）は次のアップデートで実装予定です`);
+        }
+        
+        function deleteHolding(id) {
+            if (confirm('この保有銘柄を削除しますか？')) {
+                alert(`削除機能（ID: ${id}）は次のアップデートで実装予定です`);
+            }
+        }
+        
+        function removeFromWatchlist(id) {
+            if (confirm('ウォッチリストから削除しますか？')) {
+                alert(`削除機能（ID: ${id}）は次のアップデートで実装予定です`);
+            }
+        }
+        
+        function addToPortfolio(ticker) {
+            alert(`${ticker}をポートフォリオに追加する機能は次のアップデートで実装予定です`);
+        }
+        
+        // ===============================================
+        // ポートフォリオ管理システム関数群ここまで
+        // ===============================================
+        
+        // ページ読み込み完了時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 DEBUG: v7.0 3-Mode Integration loaded successfully at', new Date().toLocaleString());
+            initializeStockTable();
+        });
+        
+        console.log('🚀 3-Mode Integration Stock Analysis Tool v7.0 loaded');
+    </script>
+</body>
+</html>

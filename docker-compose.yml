@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  stock-analysis:
+    image: python:3.11-slim
+    container_name: stock-analysis-app
+    restart: unless-stopped
+    
+    # ポート設定（外部5001 → 内部5000）
+    ports:
+      - "5001:5000"
+    
+    # ボリュームマウント  
+    volumes:
+      - "/share/Web/stock-analysis:/app"
+    
+    # 作業ディレクトリ
+    working_dir: /app
+    
+    # 環境変数
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - SECRET_KEY=qnap-global-production-2025
+      - PORT=5000
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/database/analysis.db
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/app.log
+      - ENABLE_AUTH=true
+      - AUTH_USERNAME=user  # 変更必須
+      - AUTH_PASSWORD=TS464-masamune-nas  # 変更必須
+    
+    # 起動コマンド
+    command: >
+      sh -c "
+        echo 'Current directory:' && pwd &&
+        echo 'Files in /app:' && ls -la /app/ &&
+        echo 'Installing Python dependencies...' &&
+        pip install --no-cache-dir Flask python-dotenv yfinance pandas numpy requests beautifulsoup4 lxml ta plotly scipy &&
+        echo 'Dependencies installed successfully' &&
+        echo 'Starting Flask application...' &&
+        python app.py
+      "
+    
+    # ヘルスチェック
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # リソース制限（QNAP Container Station用に削除）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 1G
+    #       cpus: '1.0'
+    #     reservations:
+    #       memory: 512M
+    #       cpus: '0.5'
+
+# ネットワーク設定（オプション）
+networks:
+  default:
+    driver: bridge

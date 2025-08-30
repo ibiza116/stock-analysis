@@ -1,0 +1,169 @@
+# 株価分析ツール - NAS移行用ファイルリスト
+
+## 📦 コピーが必要なファイル・フォルダ
+
+### 🔧 セットアップスクリプト
+setup_windows.bat
+start_app.bat
+
+### ⚙️ 設定ファイル
+.env.example
+.gitignore
+requirements.txt
+
+### 🐍 アプリケーション本体
+app.py
+wsgi.py
+
+### 📊 分析エンジン
+analyzers/
+├── __init__.py
+├── data_fetcher.py
+├── technical.py
+├── fundamental.py
+├── backtester.py
+├── strategies.py
+└── performance.py
+
+### 🌐 API ルート
+routes/
+├── __init__.py
+└── portfolio.py
+
+### 🛠️ ユーティリティ
+utils/
+├── __init__.py
+└── database.py
+
+### 🎨 フロントエンド
+templates/
+└── index.html
+
+### 📚 ドキュメント（Claude Code 継続用）
+CLAUDE.md                    # ←重要：開発履歴・仕様書
+README_MIGRATION.md          # ←この移行パッケージ用ガイド
+README.local.md              # ローカル開発ガイド
+README.md                    # 一般ユーザー向け
+DEVELOPMENT_ROADMAP.md       # 開発ロードマップ
+MIGRATION_CHECKLIST.md       # 移行チェックリスト
+
+## 📁 移行時自動作成されるフォルダ
+
+### データ保存領域（setup_windows.bat で自動作成）
+data/
+├── database/
+│   └── backups/
+├── cache/
+└── exports/
+
+### システム領域（setup_windows.bat で自動作成）
+venv/                        # Python仮想環境
+logs/                        # ログファイル
+.env                         # 環境設定（.env.exampleからコピー）
+
+## 🚫 コピー不要ファイル（開発環境固有）
+
+### 現在の開発環境固有
+myenv/                       # 既存仮想環境（新環境で再作成）
+.serena/                     # Claude Code キャッシュ
+.obsidian/                   # Obsidian 設定
+.mcp.json                    # MCP設定
+
+### 古いファイル・未使用ファイル
+start.py                     # 旧起動スクリプト
+start_simple.py              # 旧起動スクリプト  
+start.bat                    # 旧Windowsスクリプト
+run.sh                       # Linux用スクリプト
+auto_deploy.sh               # Railway デプロイ用
+
+### デプロイ設定（NAS不要）
+Dockerfile                   # コンテナ用（参考のみ）
+railway.toml                 # Railway設定（参考のみ）
+Procfile                     # Heroku設定
+nixpacks.toml               # Nixpacks設定
+runtime.txt                 # Python指定（Railway用）
+DEPLOY.md                   # デプロイ手順
+RAILWAY_SETUP.md            # Railway設定
+
+### 参考資料（オプション）
+stock-analysis-tool-spec.md  # 原仕様書
+stock_analysis_features.md  # 機能一覧
+
+## 📋 移行実行コマンド
+
+### Linux/WSL から Windows NAS への移行
+```bash
+# 移行用フォルダ作成
+mkdir -p /tmp/nas-migration/stock-analysis
+
+# 必須ファイルをコピー
+cp -r analyzers routes utils templates /tmp/nas-migration/stock-analysis/
+cp app.py wsgi.py requirements.txt .env.example .gitignore /tmp/nas-migration/stock-analysis/
+cp setup_windows.bat start_app.bat /tmp/nas-migration/stock-analysis/
+cp CLAUDE.md README*.md DEVELOPMENT_ROADMAP.md MIGRATION_CHECKLIST.md /tmp/nas-migration/stock-analysis/
+
+# 移行パッケージ完成
+echo "移行パッケージ準備完了: /tmp/nas-migration/stock-analysis"
+```
+
+### Windows NAS での展開
+```cmd
+# NAS の適切なディレクトリに移動
+cd C:\WebServer\
+
+# 移行パッケージを展開（例: stock-analysis フォルダ）
+# フォルダ内で セットアップ実行
+cd stock-analysis
+setup_windows.bat
+start_app.bat
+```
+
+## 🔍 移行後動作確認項目
+
+### 1. セットアップ確認
+- [ ] `setup_windows.bat` 正常実行
+- [ ] `venv` フォルダ作成確認
+- [ ] 依存関係インストール完了
+- [ ] `.env` ファイル作成確認
+
+### 2. アプリケーション起動確認  
+- [ ] `start_app.bat` 正常実行
+- [ ] Flask アプリ起動メッセージ表示
+- [ ] ポート 5000 で待機開始
+
+### 3. 機能動作確認
+- [ ] http://localhost:5000 でアクセス成功
+- [ ] トヨタ（7203）での分析実行
+- [ ] 5つのタブ表示確認
+- [ ] ポートフォリオ機能動作確認
+- [ ] データベース作成確認
+
+### 4. ネットワーク確認
+- [ ] NAS IP:5000 で外部アクセス確認
+- [ ] ファイアウォール設定確認
+- [ ] 必要に応じてポートフォワーディング設定
+
+## 🎯 移行成功基準
+
+### 基本動作
+✅ Windows環境での正常起動  
+✅ 株価データ取得・分析機能  
+✅ 全5つのタブ表示・動作  
+✅ ポートフォリオ機能  
+✅ データベース保存・読み出し  
+
+### 開発継続性
+✅ Claude Code でプロジェクト開始可能  
+✅ CLAUDE.md による開発履歴継承  
+✅ 新機能追加・既存機能修正可能  
+
+### 運用性
+✅ NAS再起動後の自動復旧可能  
+✅ 複数ユーザーでの同時利用  
+✅ データバックアップ・復元機能  
+
+---
+
+**ファイルリスト更新日**: 2025-08-22  
+**対象バージョン**: Phase 5 完成版  
+**移行対象**: Windows NAS サーバー

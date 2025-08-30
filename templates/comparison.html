@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>複数銘柄一斉分析 - Stock Analysis</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .app-header {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 15px 30px;
+            border-bottom: 1px solid #4a5568;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .app-title::before {
+            content: "📊";
+            font-size: 28px;
+        }
+        
+        .back-button {
+            padding: 8px 16px;
+            background: linear-gradient(145deg, #4a5568, #2d3748);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            transform: translateY(-1px);
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 25px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .analysis-info {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #4a5568;
+            text-align: center;
+        }
+        
+        .analysis-info h2 {
+            margin: 0 0 10px 0;
+            color: #4299e1;
+        }
+        
+        .analysis-date {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        /* Grid Layout */
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        /* Responsive layouts */
+        @media (min-width: 1200px) {
+            .stocks-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (min-width: 800px) and (max-width: 1199px) {
+            .stocks-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 799px) {
+            .stocks-grid {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 20px 15px;
+            }
+        }
+        
+        /* Stock Card */
+        .stock-card {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            border-radius: 12px;
+            border: 1px solid #4a5568;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stock-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            border-color: #4299e1;
+        }
+        
+        .stock-header {
+            padding: 20px;
+            background: linear-gradient(145deg, #4a5568, #2d3748);
+            border-bottom: 1px solid #4a5568;
+        }
+        
+        .stock-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: between;
+        }
+        
+        .stock-code {
+            color: #4299e1;
+            font-weight: 600;
+        }
+        
+        .stock-name {
+            color: #a0aec0;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .stock-price {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .current-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .price-change {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .price-up {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .price-down {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            height: 300px;
+            padding: 15px;
+            background: #1a202c;
+        }
+        
+        /* Signal Summary */
+        .signal-summary {
+            padding: 15px 20px;
+            background: linear-gradient(145deg, #1a202c, #2d3748);
+            border-top: 1px solid #4a5568;
+        }
+        
+        .signal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .signal-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .signal-label {
+            color: #a0aec0;
+            font-weight: 500;
+        }
+        
+        .signal-value {
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .signal-buy {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .signal-sell {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .signal-hold {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        
+        .signal-neutral {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+        
+        /* Loading */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #4299e1;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2d3748;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Error State */
+        .error-card {
+            padding: 20px;
+            text-align: center;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+        }
+        
+        .retry-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .retry-button:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1 class="app-title">複数銘柄一斉分析</h1>
+        <a href="/" class="back-button">
+            ← メイン画面に戻る
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div class="analysis-info">
+            <h2 id="analysis-title">分析期間: <span id="period-display"></span></h2>
+            <div class="analysis-date" id="analysis-date"></div>
+        </div>
+
+        <div id="stocks-grid" class="stocks-grid">
+            <!-- 株価カードが動的に生成されます -->
+        </div>
+    </div>
+
+    <script>
+        // URLパラメータから期間を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const period = urlParams.get('period') || '6mo';
+        const tickers = urlParams.get('tickers') || '';
+        
+        // 期間表示を更新
+        const periodNames = {
+            '1mo': '1ヶ月',
+            '3mo': '3ヶ月', 
+            '6mo': '6ヶ月',
+            '1y': '1年',
+            '2y': '2年',
+            '5y': '5年'
+        };
+        document.getElementById('period-display').textContent = periodNames[period] || period;
+        document.getElementById('analysis-date').textContent = `分析開始: ${new Date().toLocaleString('ja-JP')}`;
+
+        // Darkテーマのplotly設定
+        const darkThemeLayout = {
+            paper_bgcolor: '#1a202c',
+            plot_bgcolor: '#1a202c',
+            font: { color: '#ffffff' },
+            xaxis: {
+                gridcolor: '#4a5568',
+                zeroline: false,
+                tickfont: { color: '#a0aec0' }
+            },
+            yaxis: {
+                gridcolor: '#4a5568',
+                zeroline: false,
+                tickfont: { color: '#a0aec0' }
+            },
+            margin: { l: 40, r: 40, t: 20, b: 40 },
+            showlegend: false
+        };
+
+        // 複数銘柄のデータを取得して表示
+        async function loadMultipleStocks() {
+            console.log('loadMultipleStocks called with tickers:', tickers);
+            if (!tickers) {
+                console.error('No tickers provided');
+                showError('分析対象の銘柄が指定されていません');
+                return;
+            }
+
+            const tickerList = tickers.split(',').filter(t => t.trim());
+            const stocksGrid = document.getElementById('stocks-grid');
+            
+            // ローディング表示
+            stocksGrid.innerHTML = '';
+            tickerList.forEach(ticker => {
+                stocksGrid.appendChild(createLoadingCard(ticker.trim()));
+            });
+
+            // 各銘柄のデータを並列取得
+            const promises = tickerList.map(ticker => fetchStockData(ticker.trim()));
+            const results = await Promise.allSettled(promises);
+            
+            console.log('Promise results:', results);
+            
+            // 結果を表示
+            stocksGrid.innerHTML = '';
+            console.log('stocksGrid element:', stocksGrid);
+            console.log('stocksGrid styles:', window.getComputedStyle(stocksGrid));
+            results.forEach((result, index) => {
+                const ticker = tickerList[index].trim();
+                console.log(`Processing ticker ${ticker}:`, result);
+                if (result.status === 'fulfilled' && result.value) {
+                    console.log(`Creating stock card for ${ticker}`);
+                    const card = createStockCard(ticker, result.value);
+                    console.log('Card created:', card);
+                    stocksGrid.appendChild(card);
+                    console.log('Card appended, grid children count:', stocksGrid.children.length);
+                } else {
+                    console.log(`Creating error card for ${ticker}:`, result.reason);
+                    const errorCard = createErrorCard(ticker, result.reason);
+                    stocksGrid.appendChild(errorCard);
+                }
+            });
+        }
+
+        // 株価データ取得
+        async function fetchStockData(ticker) {
+            console.log(`Fetching data for ticker: ${ticker}`);
+            try {
+                const requestBody = {
+                    ticker: ticker,
+                    period: period
+                };
+                console.log('Request body:', requestBody);
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log(`Response for ${ticker}:`, response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`HTTP error for ${ticker}:`, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log(`Data received for ${ticker}:`, data);
+                console.log(`stock_data structure for ${ticker}:`, data.data);
+            console.log(`stock_data keys for ${ticker}:`, Object.keys(data.data || {}));
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                return data;
+            } catch (error) {
+                console.error(`Error fetching data for ${ticker}:`, error);
+                console.error('Response details:', {
+                    status: error.status,
+                    message: error.message
+                });
+                throw error;
+            }
+        }
+
+        // ローディングカード作成
+        function createLoadingCard(ticker) {
+            const card = document.createElement('div');
+            card.className = 'stock-card';
+            card.innerHTML = `
+                <div class="stock-header">
+                    <div class="stock-title">
+                        <span class="stock-code">${ticker}</span>
+                    </div>
+                </div>
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            `;
+            return card;
+        }
+
+        // 株価カード作成
+        function createStockCard(ticker, data) {
+            console.log(`createStockCard called for ${ticker} with data:`, data);
+            const card = document.createElement('div');
+            card.className = 'stock-card';
+            
+            // 現在価格と変化率を計算
+            // APIレスポンスの構造を確認
+            const prices = data.data?.technical?.chart_data?.prices || [];
+            console.log(`stockData structure for ${ticker}:`, data);
+            console.log(`Technical data for ${ticker}:`, data.data?.technical);
+            console.log(`Chart data for ${ticker}:`, data.data?.technical?.chart_data);
+            console.log(`Prices in chart_data for ${ticker}:`, data.data?.technical?.chart_data?.prices?.slice(0, 5));
+            console.log(`Old price access for ${ticker}:`, prices.slice(0, 5), '... length:', prices.length);
+            
+            // 価格データが見つからない場合の代替手段
+            let currentPrice = 'N/A';
+            let priceChange = null;
+            
+            if (prices.length > 0) {
+                currentPrice = prices[prices.length - 1].toFixed(0);
+                const prevPrice = prices.length > 1 ? prices[prices.length - 2] : null;
+                priceChange = prevPrice ? ((prices[prices.length - 1] - prevPrice) / prevPrice * 100).toFixed(2) : null;
+            } else {
+                // 価格データがない場合、fundamental dataから現在価格を取得
+                const fundamentalPrice = data.data?.fundamental?.fair_value?.current_price;
+                if (fundamentalPrice) {
+                    currentPrice = fundamentalPrice.toFixed(0);
+                    console.log(`Using fundamental price for ${ticker}:`, currentPrice);
+                }
+            }
+            
+            // 企業名取得（正しいパス）
+            const companyName = data.data?.stock_info?.company_name ||
+                              data.meta?.longName || 
+                              data.data?.meta?.longName ||
+                              ticker;
+            console.log(`Company name for ${ticker}:`, companyName);
+
+            card.innerHTML = `
+                <div class="stock-header">
+                    <div class="stock-title">
+                        <span class="stock-code">${ticker}</span>
+                    </div>
+                    <div class="stock-name">${companyName}</div>
+                    <div class="stock-price">
+                        <span class="current-price">¥${currentPrice}</span>
+                        ${priceChange ? `<span class="price-change ${parseFloat(priceChange) >= 0 ? 'price-up' : 'price-down'}">${parseFloat(priceChange) >= 0 ? '+' : ''}${priceChange}%</span>` : ''}
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-${ticker}"></div>
+                <div class="signal-summary">
+                    ${createSignalSummary(data)}
+                </div>
+            `;
+
+            // チャート描画
+            setTimeout(() => {
+                createChart(ticker, data);
+            }, 100);
+
+            return card;
+        }
+
+        // シグナルサマリー作成
+        function createSignalSummary(data) {
+            const technical = data.data?.technical || {};
+            const fundamental = data.data?.fundamental || {};
+            
+            // デバッグログ追加
+            console.log('Signal Debug - Full data:', data);
+            console.log('Signal Debug - Technical data:', technical);
+            console.log('Signal Debug - Fundamental data:', fundamental);
+            console.log('Signal Debug - Technical signals:', technical.signals);
+            console.log('Signal Debug - RSI Signal:', technical.signals?.rsi_signal);
+            console.log('Signal Debug - MA Signal:', technical.signals?.ma_signal);
+            console.log('Signal Debug - Golden Cross:', technical.signals?.golden_cross);
+            console.log('Signal Debug - Fundamental assessment:', fundamental.overall_assessment);
+            console.log('Signal Debug - Total Score:', fundamental.overall_assessment?.total_score);
+            console.log('Signal Debug - Recommendation:', fundamental.overall_assessment?.recommendation);
+            
+            // テクニカルシグナル
+            const rsiSignal = technical.signals?.rsi_signal || 'neutral';
+            const maSignal = technical.signals?.ma_signal || 'neutral';
+            const golddenCross = technical.signals?.golden_cross || false;
+            
+            // ファンダメンタル評価
+            const overallRating = fundamental.overall_assessment?.recommendation || 'hold';
+            const totalScore = fundamental.overall_assessment?.total_score || 0;
+            
+            return `
+                <div class="signal-row">
+                    <span class="signal-label">RSI</span>
+                    <span class="signal-value signal-${rsiSignal}">${getSignalText(rsiSignal)}</span>
+                </div>
+                <div class="signal-row">
+                    <span class="signal-label">移動平均</span>
+                    <span class="signal-value signal-${maSignal}">${getSignalText(maSignal)}</span>
+                </div>
+                <div class="signal-row">
+                    <span class="signal-label">ファンダメンタル</span>
+                    <span class="signal-value signal-${overallRating.toLowerCase()}">${getRecommendationText(overallRating)} (${totalScore.toFixed(0)}点)</span>
+                </div>
+                ${golddenCross ? '<div class="signal-row"><span class="signal-label">ゴールデンクロス</span><span class="signal-value signal-buy">発生中</span></div>' : ''}
+            `;
+        }
+
+        // シグナルテキスト変換
+        function getSignalText(signal) {
+            const signals = {
+                'buy': '買い',
+                'sell': '売り', 
+                'hold': '中立',
+                'neutral': '中立'
+            };
+            return signals[signal] || signal;
+        }
+
+        // 推奨テキスト変換
+        function getRecommendationText(recommendation) {
+            const recommendations = {
+                'buy': '買い推奨',
+                'sell': '売り推奨',
+                'hold': '保有継続'
+            };
+            return recommendations[recommendation.toLowerCase()] || recommendation;
+        }
+
+        // チャート作成
+        function createChart(ticker, data) {
+            const chartDiv = document.getElementById(`chart-${ticker}`);
+            if (!chartDiv) return;
+
+            const chartData = data.data?.technical?.chart_data || {};
+            const dates = chartData.dates || [];
+            const prices = chartData.prices || [];
+            const sma5 = chartData.sma_5 || [];
+            const sma25 = chartData.sma_25 || [];
+            
+            console.log(`Chart data for ${ticker} - dates:`, dates.length, 'prices:', prices.length);
+            
+            if (dates.length === 0 || prices.length === 0) {
+                chartDiv.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 50px;">チャートデータがありません</div>';
+                return;
+            }
+
+            // 価格チャートのトレース (ビビッドカラー)
+            const priceTrace = {
+                x: dates,
+                y: prices,
+                type: 'scatter',
+                mode: 'lines',
+                name: '株価',
+                line: {
+                    color: '#00d4ff',  // ビビッドシアン
+                    width: 2
+                }
+            };
+
+            const traces = [priceTrace];
+
+            // 移動平均線追加
+            if (sma5.length > 0) {
+                traces.push({
+                    x: dates,
+                    y: sma5,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'MA5',
+                    line: { color: '#ff6b35', width: 1.5 }  // ビビッドオレンジ
+                });
+            }
+            
+            if (sma25.length > 0) {
+                traces.push({
+                    x: dates,
+                    y: sma25,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'MA25',
+                    line: { color: '#f72585', width: 1.5 }  // ビビッドピンク
+                });
+            }
+
+            const layout = {
+                ...darkThemeLayout,
+                height: 280,
+                xaxis: {
+                    ...darkThemeLayout.xaxis,
+                    showgrid: true,
+                    type: 'date'
+                },
+                yaxis: {
+                    ...darkThemeLayout.yaxis,
+                    showgrid: true,
+                    title: { text: '価格 (¥)', font: { color: '#a0aec0' } }
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: false
+            };
+
+            Plotly.newPlot(chartDiv, traces, layout, config);
+        }
+
+        // エラーカード作成
+        function createErrorCard(ticker, error) {
+            const card = document.createElement('div');
+            card.className = 'stock-card';
+            card.innerHTML = `
+                <div class="stock-header">
+                    <div class="stock-title">
+                        <span class="stock-code">${ticker}</span>
+                    </div>
+                </div>
+                <div class="error-card">
+                    <div>データ取得エラー</div>
+                    <div style="font-size: 12px; margin-top: 5px; color: #a0aec0;">${error.message || error}</div>
+                    <button class="retry-button" onclick="retryStock('${ticker}')">再試行</button>
+                </div>
+            `;
+            return card;
+        }
+
+        // エラー表示
+        function showError(message) {
+            const stocksGrid = document.getElementById('stocks-grid');
+            stocksGrid.innerHTML = `
+                <div class="error-card" style="grid-column: 1 / -1;">
+                    <h3>エラー</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // 株価再試行
+        async function retryStock(ticker) {
+            const tickerList = tickers.split(',').map(t => t.trim());
+            const index = tickerList.findIndex(t => t === ticker);
+            if (index === -1) return;
+
+            const stocksGrid = document.getElementById('stocks-grid');
+            const cards = stocksGrid.children;
+            if (cards[index]) {
+                const loadingCard = createLoadingCard(ticker);
+                stocksGrid.replaceChild(loadingCard, cards[index]);
+                
+                try {
+                    const data = await fetchStockData(ticker);
+                    const newCard = createStockCard(ticker, data);
+                    stocksGrid.replaceChild(newCard, loadingCard);
+                } catch (error) {
+                    const errorCard = createErrorCard(ticker, error);
+                    stocksGrid.replaceChild(errorCard, loadingCard);
+                }
+            }
+        }
+
+        // ページ読み込み時に実行
+        window.addEventListener('load', loadMultipleStocks);
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+Stock Analysis Tool - NAS Migration Quick Start
+
+🚀 3 Steps to Launch
+
+1. Double-click setup_windows.bat
+   → Setup Python environment (takes ~5 minutes)
+
+2. Double-click start_app.bat  
+   → Start application
+
+3. Open browser: http://localhost:5000
+   → Begin stock analysis
+
+🎯 First Test: Use ticker 7203 (Toyota) to verify functionality
+
+📚 Detailed Guide: See README_MIGRATION.md
+
+⚠️ Troubleshooting: Check MIGRATION_CHECKLIST.md
+
+🔧 Continue Development: All history preserved in CLAUDE.md

@@ -1,0 +1,3450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        /* Header Design */
+        .app-header {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 15px 30px;
+            border-bottom: 1px solid #4a5568;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .app-title::before {
+            content: "📈";
+            font-size: 28px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        
+        .app-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            color: #a0aec0;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 25px 30px;
+        }
+        .input-section {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #4a5568;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .input-section label {
+            color: #e2e8f0;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .input-section input, .input-section select, .input-section button {
+            margin: 8px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #4a5568;
+            background: #1a202c;
+            color: #e2e8f0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .input-section input:focus, .input-section select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+            background: #2d3748;
+        }
+        .input-section button {
+            background: linear-gradient(145deg, #4299e1, #3182ce);
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-color: #3b82f6;
+        }
+        .input-section button:hover {
+            background: linear-gradient(145deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+        }
+        .chart-container {
+            margin: 25px 0;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.08);
+        }
+        .signal-box {
+            padding: 18px;
+            margin: 12px 0;
+            border-radius: 10px;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+        .buy-signal { 
+            background: linear-gradient(145deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1)); 
+            color: #059669; 
+            border-color: #10b981;
+        }
+        .sell-signal { 
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); 
+            color: #dc2626; 
+            border-color: #ef4444;
+        }
+        .watch-signal { 
+            background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1)); 
+            color: #d97706; 
+            border-color: #f59e0b;
+        }
+        .loading { display: none; color: #3b82f6; font-weight: 600; }
+        .memo-section {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 25px;
+            border: 1px solid #4a5568;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .memo-section h3 {
+            margin-top: 0;
+            color: #e2e8f0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .memo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .memo-table th {
+            background: linear-gradient(145deg, #4a5568, #2d3748);
+            border: 1px solid #4a5568;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #e2e8f0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .memo-table td {
+            border: 1px solid #4a5568;
+            padding: 8px 10px;
+            background: rgba(26, 32, 44, 0.8);
+        }
+        .memo-table input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            font-size: 14px;
+            color: #e2e8f0;
+        }
+        .memo-table input:focus {
+            background: rgba(248, 250, 252, 1);
+            border: 1px solid #3b82f6;
+            outline: none;
+            border-radius: 4px;
+        }
+        .memo-table tr:nth-child(even) {
+            background-color: rgba(241, 245, 249, 0.5);
+        }
+        .memo-table tr:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .memo-status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .memo-status.saved {
+            color: #4CAF50;
+        }
+        .memo-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .memo-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        .memo-table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* ファンダメンタル分析用スタイル */
+        .analysis-section {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.08);
+        }
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .analysis-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
+        }
+        .analysis-card h4 {
+            margin: 0 0 15px 0;
+            color: #475569;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric-label {
+            font-weight: bold;
+            color: #64748b;
+        }
+        .metric-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+        .rating-positive { color: #059669; font-weight: bold; }
+        .rating-negative { color: #dc2626; font-weight: bold; }
+        .rating-neutral { color: #d97706; font-weight: bold; }
+        .investment-advice {
+            background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #93c5fd;
+        }
+        .advice-recommendation {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .advice-list {
+            margin: 8px 0;
+        }
+        .advice-list ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #cbd5e1;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border-radius: 10px 10px 0 0;
+            margin-right: 8px;
+            color: #475569;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tab:hover {
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            transform: translateY(-2px);
+            border-color: #3b82f6;
+        }
+        .tab.active {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* バックテスト用スタイル */
+        .backtest-controls {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.08);
+        }
+        
+        .control-row {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .control-row label {
+            min-width: 100px;
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .control-row input, .control-row select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+        }
+        
+        .backtest-button {
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .backtest-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .backtest-results {
+            margin-top: 25px;
+        }
+        
+        .performance-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+            padding: 20px 0;
+        }
+        
+        .performance-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .performance-card h4 {
+            margin: 0 0 10px 0;
+            color: #475569;
+            font-size: 14px;
+        }
+        
+        .performance-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        .performance-card .value.positive {
+            color: #10b981;
+        }
+        
+        .performance-card .value.negative {
+            color: #ef4444;
+        }
+        
+        .performance-card .value.neutral {
+            color: #3b82f6;
+        }
+        
+        .results-charts {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin: 35px 0;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .results-charts .chart-container {
+            height: 400px;
+            min-height: 350px;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .results-details {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+            clear: both;
+            position: relative;
+            z-index: 2;
+            background: #ffffff;
+        }
+        
+        .tabs-sub {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .tab-sub {
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-sub.active {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        
+        .sub-tab-content {
+            display: none;
+        }
+        
+        .sub-tab-content.active {
+            display: block;
+        }
+        
+        .trades-table {
+            overflow-x: auto;
+            margin-top: 20px;
+            position: relative;
+            z-index: 3;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .trades-table table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .trades-table th, .trades-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .trades-table th {
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .trades-table .profit {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .trades-table .loss {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        /* Portfolio Management Styles */
+        .portfolio-section {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.08);
+        }
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .portfolio-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.05);
+        }
+        .portfolio-summary {
+            background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #0284c7;
+            margin-bottom: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+        }
+        .summary-item .label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .summary-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .summary-item .positive {
+            color: #059669;
+        }
+        .summary-item .negative {
+            color: #dc2626;
+        }
+        .portfolio-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .portfolio-table th {
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            border: 1px solid #cbd5e1;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #475569;
+            font-size: 12px;
+        }
+        .portfolio-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+            background: rgba(248, 250, 252, 0.8);
+            font-size: 12px;
+        }
+        .portfolio-table .profit {
+            color: #059669;
+            font-weight: bold;
+        }
+        .portfolio-table .loss {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(145deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(145deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: linear-gradient(145deg, #6b7280, #4b5563);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(145deg, #4b5563, #374151);
+            transform: translateY(-1px);
+        }
+        .portfolio-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .portfolio-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .portfolio-tab:hover {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .portfolio-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .portfolio-tab-content {
+            display: none;
+        }
+        .portfolio-tab-content.active {
+            display: block;
+        }
+        .note-item {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 10px;
+        }
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .note-title {
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .note-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .note-content {
+            color: #475569;
+            line-height: 1.5;
+        }
+        .history-item {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 10px;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .history-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .history-type.technical {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .history-type.fundamental {
+            background: #d1fae5;
+            color: #047857;
+        }
+        .history-type.backtest {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .detailed-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .metric-group {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .metric-group h4 {
+            margin: 0 0 15px 0;
+            color: #1e293b;
+            font-size: 16px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+        }
+        
+        .metric-label {
+            color: #64748b;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 新しいバックテストUI用スタイル */
+        .backtest-explanation {
+            background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+            border: 2px solid #0ea5e9;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(14, 165, 233, 0.1);
+        }
+        
+        .explanation-content {
+            margin-top: 15px;
+        }
+        
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .explanation-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .explanation-card h4 {
+            margin: 0 0 12px 0;
+            color: #1e293b;
+            font-size: 16px;
+        }
+        
+        .explanation-card ul, .explanation-card ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .explanation-card li {
+            margin: 8px 0;
+            color: #475569;
+            line-height: 1.5;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        
+        .setting-group {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+        }
+        
+        .setting-group h4 {
+            margin: 0 0 8px 0;
+            color: #1e293b;
+            font-size: 16px;
+        }
+        
+        .setting-description {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0 0 15px 0;
+            line-height: 1.4;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+            border: 1px solid #94a3b8;
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover {
+            background: linear-gradient(145deg, #cbd5e1, #94a3b8);
+            transform: translateY(-1px);
+        }
+        
+        .strategy-description {
+            background: linear-gradient(145deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #92400e;
+            line-height: 1.4;
+        }
+        
+        .setting-note {
+            display: block;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 8px;
+            line-height: 1.3;
+        }
+        
+        .execute-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .execute-note {
+            margin: 10px 0 0 0;
+            color: #64748b;
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .results-interpretation {
+            margin-bottom: 20px;
+        }
+        
+        .interpretation-toggle {
+            margin-bottom: 15px;
+        }
+        
+        .guide-toggle-btn {
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            color: #92400e;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .guide-toggle-btn:hover {
+            background: linear-gradient(145deg, #f59e0b, #d97706);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+        
+        .results-guide {
+            background: linear-gradient(145deg, #fefce8, #fef3c7);
+            border: 2px solid #eab308;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .guide-item {
+            background: linear-gradient(145deg, #ffffff, #fefcf9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #fbbf24;
+        }
+        
+        .guide-item h5 {
+            margin: 0 0 8px 0;
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .guide-item p {
+            margin: 0;
+            color: #78716c;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .overall-rating {
+            margin: 25px 0;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+            clear: both;
+        }
+        
+        .overall-rating.excellent {
+            background: linear-gradient(145deg, #dcfce7, #bbf7d0);
+            border: 2px solid #16a34a;
+            color: #166534;
+        }
+        
+        .overall-rating.good {
+            background: linear-gradient(145deg, #fef3c7, #fde68a);
+            border: 2px solid #eab308;
+            color: #92400e;
+        }
+        
+        .overall-rating.poor {
+            background: linear-gradient(145deg, #fecaca, #fca5a5);
+            border: 2px solid #dc2626;
+            color: #991b1b;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-section {
+                grid-template-columns: 1fr;
+                margin-bottom: 30px;
+            }
+            
+            .results-charts .chart-container {
+                height: 300px;
+                min-height: 250px;
+            }
+            
+            .results-details {
+                margin-top: 30px;
+                padding-top: 20px;
+            }
+            
+            .performance-cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .control-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .control-row label {
+                min-width: auto;
+            }
+            
+            .explanation-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .preset-buttons {
+                justify-content: center;
+            }
+            
+            .guide-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Application Header -->
+    <div class="app-header">
+        <div class="app-title">Stock Analysis</div>
+        <div class="app-status">
+            <span class="status-indicator"></span>
+            <span>Live Market Data</span>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+    
+    <div class="input-section">
+        <label for="ticker">銘柄コード（4桁）:</label>
+        <input type="text" id="ticker" placeholder="例: 7203（トヨタ）" maxlength="4" value="">
+        
+        <label for="period">期間:</label>
+        <select id="period">
+            <option value="3mo">3ヶ月</option>
+            <option value="6mo" selected>6ヶ月</option>
+            <option value="1y">1年</option>
+        </select>
+        
+        <button onclick="analyzeStock()">分析開始</button>
+        <span class="loading" id="loading">分析中...</span>
+    </div>
+    
+    <div class="memo-section">
+        <h3>📝 投資メモ一覧</h3>
+        <div class="memo-table-container">
+            <table class="memo-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">銘柄番号</th>
+                    <th style="width: 25%;">銘柄名</th>
+                    <th style="width: 60%;">メモ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="" maxlength="4"></td>
+                    <td><input type="text" placeholder=""></td>
+                    <td><input type="text" placeholder=""></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="memo-status" id="memo-status">メモデータを読み込み中...</div>
+    </div>
+    
+    <div id="results" style="display: none;">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('technical-tab')">基本テクニカル</button>
+            <button class="tab" onclick="showTab('advanced-tab')">高度テクニカル</button>
+            <button class="tab" onclick="showTab('fundamental-tab')">ファンダメンタル</button>
+            <button class="tab" onclick="showTab('backtest-tab')">バックテスト</button>
+            <button class="tab" onclick="showTab('portfolio-tab')">ポートフォリオ</button>
+        </div>
+        
+        <div id="technical-tab" class="tab-content active">
+            <div id="chart" class="chart-container"></div>
+            <div id="signals"></div>
+            <div id="golden-crosses"></div>
+        </div>
+        
+        <div id="advanced-tab" class="tab-content">
+            <!-- 指標解説セクション -->
+            <div class="analysis-section">
+                <h3 style="color: #475569; margin-bottom: 20px;">📚 高度テクニカル指標の見方・使い方</h3>
+                <div class="analysis-grid">
+                    <div class="analysis-card">
+                        <h4>🎯 ボリンジャーバンド</h4>
+                        <p><strong>概要:</strong> 移動平均線を中心とした価格の変動幅を示すバンド</p>
+                        <p><strong>構成:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>中央線：20日移動平均線</li>
+                            <li>上限・下限：標準偏差±2σ</li>
+                        </ul>
+                        <p><strong>投資判断:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>🔴 <span style="color: #dc2626;">上限タッチ</span> → 売りシグナル（買われすぎ）</li>
+                            <li>🟢 <span style="color: #059669;">下限タッチ</span> → 買いシグナル（売られすぎ）</li>
+                            <li>🟡 <span style="color: #d97706;">バンド幅縮小</span> → 大きな値動き前の前兆</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h4>📊 MACD</h4>
+                        <p><strong>概要:</strong> 移動平均収束拡散指標。トレンドの強さと転換点を判定</p>
+                        <p><strong>構成:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>MACD線：12日EMA - 26日EMA</li>
+                            <li>シグナル線：MACD線の9日EMA</li>
+                            <li>ヒストグラム：MACD線 - シグナル線</li>
+                        </ul>
+                        <p><strong>投資判断:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>🟢 <span style="color: #059669;">ゴールデンクロス</span> → 買いシグナル</li>
+                            <li>🔴 <span style="color: #dc2626;">デッドクロス</span> → 売りシグナル</li>
+                            <li>📈 <span style="color: #3b82f6;">ヒストグラム拡大</span> → トレンド強化</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h4>⚡ ストキャスティクス</h4>
+                        <p><strong>概要:</strong> 一定期間の価格レンジ内での現在価格の位置を%で表示</p>
+                        <p><strong>構成:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>%K線：高値・安値レンジでの現在価格位置</li>
+                            <li>%D線：%K線の3日平滑移動平均</li>
+                        </ul>
+                        <p><strong>投資判断:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>🔴 <span style="color: #dc2626;">80%以上</span> → 買われすぎ（売り検討）</li>
+                            <li>🟢 <span style="color: #059669;">20%以下</span> → 売られすぎ（買い検討）</li>
+                            <li>✨ <span style="color: #3b82f6;">%K > %D</span> → 上昇の勢い</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h4>📈 出来高分析</h4>
+                        <p><strong>概要:</strong> 価格変動と出来高の関係を分析。トレンドの確実性を判定</p>
+                        <p><strong>構成:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>出来高：実際の取引量</li>
+                            <li>出来高移動平均：20日間の平均出来高</li>
+                        </ul>
+                        <p><strong>投資判断:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; color: #64748b;">
+                            <li>🔥 <span style="color: #dc2626;">2倍以上</span> → 異常出来高（重要な動き）</li>
+                            <li>📊 <span style="color: #d97706;">1.5倍以上</span> → 高出来高（注目）</li>
+                            <li>💡 <span style="color: #64748b;">上昇+高出来高</span> → 上昇トレンド信頼性高</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- チャート表示 -->
+            <div class="analysis-grid">
+                <div id="bollinger-chart" class="chart-container"></div>
+                <div id="macd-chart" class="chart-container"></div>
+                <div id="stoch-chart" class="chart-container"></div>
+                <div id="volume-chart" class="chart-container"></div>
+            </div>
+            <div id="advanced-signals"></div>
+        </div>
+        
+        <div id="fundamental-tab" class="tab-content">
+            <div id="fundamental-analysis" class="analysis-section"></div>
+        </div>
+        
+        <div id="backtest-tab" class="tab-content">
+            <!-- バックテスト説明セクション -->
+            <div class="backtest-explanation">
+                <h3>🔄 バックテストとは？</h3>
+                <div class="explanation-content">
+                    <p><strong>バックテスト</strong>は、過去の株価データを使って投資戦略の有効性を検証するシミュレーション機能です。</p>
+                    
+                    <div class="explanation-grid">
+                        <div class="explanation-card">
+                            <h4>📊 何ができる？</h4>
+                            <ul>
+                                <li>過去の相場で戦略が利益を出せたか確認</li>
+                                <li>リスクとリターンの関係を数値で把握</li>
+                                <li>複数の投資戦略を比較検討</li>
+                                <li>実際の投資前にリスクを評価</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="explanation-card">
+                            <h4>⚠️ 注意点</h4>
+                            <ul>
+                                <li>過去の結果は将来を保証しません</li>
+                                <li>手数料・税金は考慮されていません</li>
+                                <li>流動性リスクは含まれていません</li>
+                                <li>参考情報として活用してください</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="explanation-card">
+                            <h4>📈 使い方の流れ</h4>
+                            <ol>
+                                <li>検証したい期間を設定</li>
+                                <li>投資戦略を選択</li>
+                                <li>初期資金を入力</li>
+                                <li>実行ボタンでシミュレーション開始</li>
+                                <li>結果を分析して戦略を評価</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- バックテスト設定セクション -->
+            <div class="backtest-controls">
+                <h3>⚙️ バックテスト設定</h3>
+                
+                <div class="settings-grid">
+                    <!-- 期間設定 -->
+                    <div class="setting-group">
+                        <h4>📅 検証期間</h4>
+                        <p class="setting-description">過去のどの期間で戦略をテストするかを設定します</p>
+                        <div class="control-row">
+                            <label>開始日:</label>
+                            <input type="date" id="backtest-start-date" value="">
+                        </div>
+                        <div class="control-row">
+                            <label>終了日:</label>
+                            <input type="date" id="backtest-end-date" value="">
+                        </div>
+                        <div class="preset-buttons">
+                            <button type="button" onclick="setPresetPeriod(90)" class="preset-btn">過去3ヶ月</button>
+                            <button type="button" onclick="setPresetPeriod(180)" class="preset-btn">過去6ヶ月</button>
+                            <button type="button" onclick="setPresetPeriod(365)" class="preset-btn">過去1年</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 戦略設定 -->
+                    <div class="setting-group">
+                        <h4>🎯 投資戦略</h4>
+                        <p class="setting-description">どの売買ルールでテストするかを選択します</p>
+                        <div class="control-row">
+                            <select id="strategy-select" onchange="showStrategyDescription()">
+                                <option value="combo">複合戦略（推奨）</option>
+                                <option value="rsi">RSI戦略</option>
+                                <option value="golden_cross">ゴールデンクロス戦略</option>
+                                <option value="macd">MACD戦略</option>
+                                <option value="bollinger">ボリンジャーバンド戦略</option>
+                            </select>
+                        </div>
+                        <div id="strategy-description" class="strategy-description">
+                            <strong>複合戦略:</strong> RSI、移動平均線、MACD、ボリンジャーバンドを組み合わせた総合的な判定を行います。複数の指標を使うことでより精度の高い売買タイミングを狙います。（初心者におすすめ）
+                        </div>
+                    </div>
+                    
+                    <!-- 資金設定 -->
+                    <div class="setting-group">
+                        <h4>💰 初期資金</h4>
+                        <p class="setting-description">投資をスタートする時の資金額を設定します</p>
+                        <div class="control-row">
+                            <input type="number" id="initial-capital" value="1000000" step="100000" min="100000">
+                            <span>円</span>
+                        </div>
+                        <div class="preset-buttons">
+                            <button type="button" onclick="setCapital(500000)" class="preset-btn">50万円</button>
+                            <button type="button" onclick="setCapital(1000000)" class="preset-btn">100万円</button>
+                            <button type="button" onclick="setCapital(3000000)" class="preset-btn">300万円</button>
+                        </div>
+                        <small class="setting-note">💡 実際の投資額に近い金額を設定すると、より実践的な結果が得られます</small>
+                    </div>
+                </div>
+                
+                <div class="execute-section">
+                    <button onclick="runBacktest()" class="backtest-button">
+                        🚀 バックテスト実行
+                    </button>
+                    <p class="execute-note">※ 実行には数秒〜数十秒かかる場合があります</p>
+                </div>
+            </div>
+            
+            <div id="backtest-results" class="backtest-results" style="display: none;">
+                <div class="results-summary">
+                    <h3>📊 バックテスト結果</h3>
+                    <div class="results-interpretation">
+                        <div class="interpretation-toggle">
+                            <button type="button" onclick="toggleResultsGuide()" class="guide-toggle-btn">
+                                💡 結果の見方ガイド <span id="guide-toggle-icon">▼</span>
+                            </button>
+                        </div>
+                        <div id="results-guide" class="results-guide" style="display: none;">
+                            <div class="guide-grid">
+                                <div class="guide-item">
+                                    <h5>📈 総リターン</h5>
+                                    <p>投資期間全体での利益率。プラスなら利益、マイナスなら損失を表します。年利換算して他の投資商品と比較しましょう。</p>
+                                </div>
+                                <div class="guide-item">
+                                    <h5>🎯 勝率</h5>
+                                    <p>全取引のうち利益を出した取引の割合。高いほど安定していますが、50%以上あれば良好です。</p>
+                                </div>
+                                <div class="guide-item">
+                                    <h5>📉 最大ドローダウン</h5>
+                                    <p>最大の損失幅。投資で覚悟すべき最大の下落を示します。10%以下なら良好、20%超は要注意です。</p>
+                                </div>
+                                <div class="guide-item">
+                                    <h5>⚖️ シャープレシオ</h5>
+                                    <p>リスクに対するリターンの効率性。1.0以上で良好、2.0以上で優秀な戦略と言えます。</p>
+                                </div>
+                                <div class="guide-item">
+                                    <h5>🏪 バイ&ホールド比較</h5>
+                                    <p>単純に買って持ち続けた場合との比較。プラスなら戦略に価値があることを示します。</p>
+                                </div>
+                                <div class="guide-item">
+                                    <h5>📋 総合判定</h5>
+                                    <p><strong>優秀:</strong> 全指標が良好　<strong>良好:</strong> 多くの指標が良好　<strong>要改善:</strong> リスクが高いか収益性が低い</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="performance-summary" class="performance-cards"></div>
+                    <div id="overall-rating" class="overall-rating"></div>
+                </div>
+                
+                <div class="results-charts">
+                    <div class="chart-section">
+                        <div id="backtest-chart" class="chart-container"></div>
+                        <div id="performance-chart" class="chart-container"></div>
+                    </div>
+                </div>
+                
+                <div class="results-details">
+                    <div class="tabs-sub">
+                        <button class="tab-sub active" onclick="showSubTab('trade-list')">取引履歴</button>
+                        <button class="tab-sub" onclick="showSubTab('performance-metrics')">詳細指標</button>
+                        <button class="tab-sub" onclick="showSubTab('strategy-params')">戦略パラメータ</button>
+                    </div>
+                    
+                    <div id="trade-list" class="sub-tab-content active">
+                        <div id="trades-table" class="trades-table"></div>
+                    </div>
+                    
+                    <div id="performance-metrics" class="sub-tab-content">
+                        <div id="detailed-metrics" class="detailed-metrics"></div>
+                    </div>
+                    
+                    <div id="strategy-params" class="sub-tab-content">
+                        <div id="strategy-parameters" class="strategy-parameters"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="backtest-loading" class="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>バックテストを実行中...</p>
+            </div>
+        </div>
+        
+        <div id="portfolio-tab" class="tab-content">
+            <!-- Portfolio Management Section -->
+            <div class="portfolio-section">
+                <h3 style="color: #475569; margin-bottom: 20px;">💼 ポートフォリオ管理</h3>
+                
+                <!-- Portfolio Summary -->
+                <div id="portfolio-summary" class="portfolio-summary">
+                    <h4 style="margin: 0 0 15px 0; color: #0f172a;">📈 ポートフォリオサマリー</h4>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="label">保有銘柄数</div>
+                            <div class="value" id="total-stocks">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">総投資金額</div>
+                            <div class="value" id="total-investment">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">現在価値</div>
+                            <div class="value" id="current-value">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">损益</div>
+                            <div class="value" id="total-profit-loss">￥0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="label">损益率</div>
+                            <div class="value" id="total-profit-loss-pct">0.00%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Portfolio Tabs -->
+                <div class="portfolio-tabs">
+                    <button class="portfolio-tab active" onclick="showPortfolioTab('portfolio-holdings')">Portfolio</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('watchlist')">Watchlist</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('notes')">メモ</button>
+                    <button class="portfolio-tab" onclick="showPortfolioTab('history')">History</button>
+                </div>
+                
+                <!-- Portfolio Holdings Tab -->
+                <div id="portfolio-holdings" class="portfolio-tab-content active">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>📊 ポートフォリオ一覧</h4>
+                            <div id="portfolio-table-container">
+                                <table class="portfolio-table">
+                                    <thead>
+                                        <tr>
+                                            <th>銘柄</th>
+                                            <th>企業名</th>
+                                            <th>保有数</th>
+                                            <th>平均取得価格</th>
+                                            <th>現在価格</th>
+                                            <th>损益</th>
+                                            <th>损益率</th>
+                                            <th>アクション</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="portfolio-tbody">
+                                        <tr>
+                                            <td colspan="8" style="text-align: center; color: #64748b; padding: 20px;">
+                                                ポートフォリオデータを読み込み中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ 銘柄追加</h4>
+                            <form id="add-to-portfolio-form">
+                                <div class="form-group">
+                                    <label for="add-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="add-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-shares">保有数</label>
+                                    <input type="number" id="add-shares" min="1" placeholder="100" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-price">平均取得価格</label>
+                                    <input type="number" id="add-price" min="0" step="0.01" placeholder="2800" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-notes">メモ (任意)</label>
+                                    <textarea id="add-notes" placeholder="購入理由やメモを記入..."></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">追加</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearAddForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Watchlist Tab -->
+                <div id="watchlist" class="portfolio-tab-content">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>👀 ウォッチリスト</h4>
+                            <div id="watchlist-table-container">
+                                <table class="portfolio-table">
+                                    <thead>
+                                        <tr>
+                                            <th>銘柄</th>
+                                            <th>企業名</th>
+                                            <th>目標価格</th>
+                                            <th>アラート</th>
+                                            <th>追加日</th>
+                                            <th>アクション</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="watchlist-tbody">
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">
+                                                ウォッチリストデータを読み込み中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ ウォッチリスト追加</h4>
+                            <form id="add-to-watchlist-form">
+                                <div class="form-group">
+                                    <label for="watch-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="watch-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="watch-target-price">目標価格 (任意)</label>
+                                    <input type="number" id="watch-target-price" min="0" step="0.01" placeholder="3000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="watch-notes">メモ (任意)</label>
+                                    <textarea id="watch-notes" placeholder="注目理由やメモを記入..."></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">追加</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearWatchForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes Tab -->
+                <div id="notes" class="portfolio-tab-content">
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card">
+                            <h4>📝 投資メモ一覧</h4>
+                            <div id="notes-container">
+                                <div style="text-align: center; color: #64748b; padding: 20px;">
+                                    メモデータを読み込み中...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="portfolio-card">
+                            <h4>➕ メモ追加</h4>
+                            <form id="add-note-form">
+                                <div class="form-group">
+                                    <label for="note-ticker">銘柄コード (4桁)</label>
+                                    <input type="text" id="note-ticker" maxlength="4" placeholder="7203" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-title">タイトル</label>
+                                    <input type="text" id="note-title" placeholder="メモのタイトル" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-type">カテゴリ</label>
+                                    <select id="note-type">
+                                        <option value="general">一般</option>
+                                        <option value="analysis">分析</option>
+                                        <option value="strategy">戦略</option>
+                                        <option value="risk">リスク</option>
+                                        <option value="news">ニュース</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="note-content">内容</label>
+                                    <textarea id="note-content" style="height: 120px;" placeholder="メモの内容を記入..." required></textarea>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="submit" class="btn btn-primary">保存</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearNoteForm()">クリア</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="history" class="portfolio-tab-content">
+                    <div class="portfolio-section">
+                        <h4>📈 分析・バックテスト履歴</h4>
+                        <div id="history-container">
+                            <div style="text-align: center; color: #64748b; padding: 20px;">
+                                履歴データを読み込み中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function analyzeStock() {
+            console.log('分析開始');
+            
+            const ticker = document.getElementById('ticker').value;
+            const period = document.getElementById('period').value;
+            
+            console.log('Ticker:', ticker, 'Period:', period);
+            
+            if (!ticker || ticker.length !== 4) {
+                alert('4桁の銘柄コードを入力してください');
+                return;
+            }
+            
+            const loadingElement = document.getElementById('loading');
+            loadingElement.style.display = 'inline';
+            
+            try {
+                console.log('APIリクエスト送信中...');
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker, 
+                        period: period
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (result.success) {
+                    displayResults(result.data);
+                } else {
+                    alert('エラー: ' + result.error);
+                    console.error('API Error:', result.error);
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                alert('通信エラーが発生しました: ' + error.message);
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        }
+        
+        function displayResults(data) {
+            console.log('結果表示開始', data);
+            
+            try {
+                document.getElementById('results').style.display = 'block';
+                
+                // テクニカル分析結果の表示
+                displayTechnicalAnalysis(data.technical || data);
+                
+                // 高度テクニカル分析結果の表示（Phase 3）
+                displayAdvancedTechnicalAnalysis(data.technical || data);
+                
+                // ファンダメンタル分析結果の表示
+                if (data.fundamental) {
+                    displayFundamentalAnalysis(data.fundamental, data.stock_info);
+                }
+                
+                console.log('結果表示完了');
+                
+            } catch (error) {
+                console.error('Display Error:', error);
+                alert('結果表示中にエラーが発生しました: ' + error.message);
+            }
+        }
+        
+        function displayTechnicalAnalysis(data) {
+            // チャート描画
+            if (data.chart_data) {
+                const chartData = data.chart_data;
+                const traces = [
+                    {
+                        x: chartData.dates,
+                        y: chartData.prices,
+                        type: 'scatter',
+                        name: '終値',
+                        line: {color: 'blue', width: 2}
+                    }
+                ];
+                
+                // 移動平均線を追加（データがある場合）
+                if (chartData.sma_25 && chartData.sma_25.some(v => v != null)) {
+                    traces.push({
+                        x: chartData.dates,
+                        y: chartData.sma_25,
+                        type: 'scatter',
+                        name: '25日移動平均',
+                        line: {color: 'green', width: 1}
+                    });
+                }
+                
+                if (chartData.sma_75 && chartData.sma_75.some(v => v != null)) {
+                    traces.push({
+                        x: chartData.dates,
+                        y: chartData.sma_75,
+                        type: 'scatter',
+                        name: '75日移動平均',
+                        line: {color: 'red', width: 1}
+                    });
+                }
+                
+                const layout = {
+                    title: {text: '📈 株価チャート（基本）', font: {color: '#1e293b', size: 18}},
+                    xaxis: {title: '日付', color: '#475569'},
+                    yaxis: {title: '株価（円）', color: '#475569'},
+                    height: 500,
+                    paper_bgcolor: 'rgba(255,255,255,0)',
+                    plot_bgcolor: 'rgba(248, 250, 252, 0.8)',
+                    font: {color: '#1e293b'},
+                    legend: {
+                        bgcolor: 'rgba(255, 255, 255, 0.9)',
+                        bordercolor: '#cbd5e1',
+                        borderwidth: 1
+                    }
+                };
+                
+                Plotly.newPlot('chart', traces, layout);
+            }
+            
+            // シグナル表示
+            const signalsDiv = document.getElementById('signals');
+            signalsDiv.innerHTML = '<h3>売買シグナル</h3>';
+            
+            if (data.signals && data.signals.length > 0) {
+                data.signals.forEach(signal => {
+                    const div = document.createElement('div');
+                    div.className = `signal-box ${signal.type}-signal`;
+                    const typeText = signal.type === 'buy' ? '📈 買い' : signal.type === 'sell' ? '📉 売り' : '👀 注目';
+                    const strengthIcon = signal.strength === 'strong' ? '🔥' : signal.strength === 'medium' ? '⚡' : '💡';
+                    div.innerHTML = `${strengthIcon} ${typeText}シグナル: ${signal.reason}`;
+                    signalsDiv.appendChild(div);
+                });
+            } else {
+                signalsDiv.innerHTML += '<p style="color: #64748b;">現在、明確な売買シグナルはありません。</p>';
+            }
+            
+            // RSI表示
+            if (data.latest_rsi) {
+                const rsiDiv = document.createElement('div');
+                rsiDiv.innerHTML = `<p>現在のRSI: ${data.latest_rsi.toFixed(2)}</p>`;
+                signalsDiv.appendChild(rsiDiv);
+            }
+        }
+        
+        function displayAdvancedTechnicalAnalysis(data) {
+            console.log('高度テクニカル分析表示開始', data);
+            
+            // ボリンジャーバンドチャート
+            if (data.bollinger_data && data.chart_data) {
+                const chartData = data.chart_data;
+                const bbData = data.bollinger_data;
+                
+                const bbTraces = [
+                    {
+                        x: chartData.dates,
+                        y: chartData.prices,
+                        type: 'scatter',
+                        name: '終値',
+                        line: {color: '#74b9ff', width: 2}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: bbData.upper,
+                        type: 'scatter',
+                        name: 'ボリンジャー上限',
+                        line: {color: '#fd79a8', width: 1},
+                        fill: 'tonexty'
+                    },
+                    {
+                        x: chartData.dates,
+                        y: bbData.middle,
+                        type: 'scatter',
+                        name: 'ボリンジャー中央',
+                        line: {color: '#fdcb6e', width: 1}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: bbData.lower,
+                        type: 'scatter',
+                        name: 'ボリンジャー下限',
+                        line: {color: '#fd79a8', width: 1},
+                        fill: 'tonexty'
+                    }
+                ];
+                
+                const bbLayout = {
+                    title: {text: '🎯 ボリンジャーバンド', font: {color: '#1e293b'}},
+                    xaxis: {title: '日付', color: '#475569'},
+                    yaxis: {title: '株価（円）', color: '#475569'},
+                    height: 350,
+                    paper_bgcolor: 'rgba(255,255,255,0)',
+                    plot_bgcolor: 'rgba(248, 250, 252, 0.8)',
+                    font: {color: '#1e293b'}
+                };
+                
+                Plotly.newPlot('bollinger-chart', bbTraces, bbLayout);
+            }
+            
+            // MACDチャート
+            if (data.macd_data && data.chart_data) {
+                const macdData = data.macd_data;
+                const chartData = data.chart_data;
+                
+                const macdTraces = [
+                    {
+                        x: chartData.dates,
+                        y: macdData.macd,
+                        type: 'scatter',
+                        name: 'MACD',
+                        line: {color: '#00b894', width: 2}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: macdData.signal,
+                        type: 'scatter',
+                        name: 'シグナル',
+                        line: {color: '#e17055', width: 2}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: macdData.histogram,
+                        type: 'bar',
+                        name: 'ヒストグラム',
+                        marker: {color: '#6c5ce7'}
+                    }
+                ];
+                
+                const macdLayout = {
+                    title: {text: '📊 MACD', font: {color: '#1e293b'}},
+                    xaxis: {title: '日付', color: '#475569'},
+                    yaxis: {title: 'MACD値', color: '#475569'},
+                    height: 350,
+                    paper_bgcolor: 'rgba(255,255,255,0)',
+                    plot_bgcolor: 'rgba(248, 250, 252, 0.8)',
+                    font: {color: '#1e293b'}
+                };
+                
+                Plotly.newPlot('macd-chart', macdTraces, macdLayout);
+            }
+            
+            // ストキャスティクスチャート
+            if (data.stoch_data && data.chart_data) {
+                const stochData = data.stoch_data;
+                const chartData = data.chart_data;
+                
+                const stochTraces = [
+                    {
+                        x: chartData.dates,
+                        y: stochData.k,
+                        type: 'scatter',
+                        name: '%K',
+                        line: {color: '#a29bfe', width: 2}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: stochData.d,
+                        type: 'scatter',
+                        name: '%D',
+                        line: {color: '#fd79a8', width: 2}
+                    }
+                ];
+                
+                // 買われすぎ・売られすぎラインを追加
+                stochTraces.push(
+                    {
+                        x: chartData.dates,
+                        y: Array(chartData.dates.length).fill(80),
+                        type: 'scatter',
+                        name: '買われすぎ(80)',
+                        line: {color: '#e74c3c', width: 1, dash: 'dash'},
+                        showlegend: false
+                    },
+                    {
+                        x: chartData.dates,
+                        y: Array(chartData.dates.length).fill(20),
+                        type: 'scatter',
+                        name: '売られすぎ(20)',
+                        line: {color: '#2ecc71', width: 1, dash: 'dash'},
+                        showlegend: false
+                    }
+                );
+                
+                const stochLayout = {
+                    title: {text: '⚡ ストキャスティクス', font: {color: '#1e293b'}},
+                    xaxis: {title: '日付', color: '#475569'},
+                    yaxis: {title: 'ストキャス値(%)', color: '#475569', range: [0, 100]},
+                    height: 350,
+                    paper_bgcolor: 'rgba(255,255,255,0)',
+                    plot_bgcolor: 'rgba(248, 250, 252, 0.8)',
+                    font: {color: '#1e293b'}
+                };
+                
+                Plotly.newPlot('stoch-chart', stochTraces, stochLayout);
+            }
+            
+            // 出来高チャート
+            if (data.volume_data && data.chart_data) {
+                const volumeData = data.volume_data;
+                const chartData = data.chart_data;
+                
+                const volumeTraces = [
+                    {
+                        x: chartData.dates,
+                        y: volumeData.volume,
+                        type: 'bar',
+                        name: '出来高',
+                        marker: {color: '#74b9ff'}
+                    },
+                    {
+                        x: chartData.dates,
+                        y: volumeData.volume_sma,
+                        type: 'scatter',
+                        name: '出来高移動平均',
+                        line: {color: '#fd79a8', width: 2}
+                    }
+                ];
+                
+                const volumeLayout = {
+                    title: {text: '📈 出来高分析', font: {color: '#1e293b'}},
+                    xaxis: {title: '日付', color: '#475569'},
+                    yaxis: {title: '出来高', color: '#475569'},
+                    height: 350,
+                    paper_bgcolor: 'rgba(255,255,255,0)',
+                    plot_bgcolor: 'rgba(248, 250, 252, 0.8)',
+                    font: {color: '#1e293b'}
+                };
+                
+                Plotly.newPlot('volume-chart', volumeTraces, volumeLayout);
+            }
+            
+            // 高度シグナル表示
+            const advSignalsDiv = document.getElementById('advanced-signals');
+            advSignalsDiv.innerHTML = '<h3 style="color: #475569;">🚀 高度テクニカルシグナル</h3>';
+            
+            let allSignals = [];
+            
+            // 各指標のシグナルを統合
+            if (data.bollinger_data && data.bollinger_data.signals) {
+                allSignals = allSignals.concat(data.bollinger_data.signals);
+            }
+            if (data.macd_data && data.macd_data.signals) {
+                allSignals = allSignals.concat(data.macd_data.signals);
+            }
+            if (data.volume_data && data.volume_data.signals) {
+                allSignals = allSignals.concat(data.volume_data.signals);
+            }
+            if (data.stoch_data && data.stoch_data.signals) {
+                allSignals = allSignals.concat(data.stoch_data.signals);
+            }
+            
+            if (allSignals.length > 0) {
+                allSignals.forEach(signal => {
+                    const div = document.createElement('div');
+                    div.className = `signal-box ${signal.type}-signal`;
+                    const typeText = signal.type === 'buy' ? '📈 買い' : signal.type === 'sell' ? '📉 売り' : '👀 注目';
+                    const strengthIcon = signal.strength === 'strong' ? '🔥' : signal.strength === 'medium' ? '⚡' : '💡';
+                    div.innerHTML = `${strengthIcon} ${typeText}シグナル: ${signal.reason}`;
+                    advSignalsDiv.appendChild(div);
+                });
+            } else {
+                advSignalsDiv.innerHTML += '<p style="color: #64748b;">現在、高度テクニカルシグナルはありません。</p>';
+            }
+        }
+        
+        function displayFundamentalAnalysis(fundamental, stockInfo) {
+            const fundamentalDiv = document.getElementById('fundamental-analysis');
+            
+            if (fundamental.error) {
+                fundamentalDiv.innerHTML = `<h3>ファンダメンタル分析</h3><p>エラー: ${fundamental.error}</p>`;
+                return;
+            }
+            
+            const stockName = stockInfo ? stockInfo.company_name : '';
+            const currentPrice = stockInfo ? stockInfo.current_price : 0;
+            
+            let html = `
+                <h3>📊 ファンダメンタル分析 - ${stockName} (${currentPrice.toFixed(0)}円)</h3>
+                <div class="analysis-grid">
+            `;
+            
+            // バリュエーション分析
+            if (fundamental.valuation) {
+                const val = fundamental.valuation;
+                html += `
+                    <div class="analysis-card">
+                        <h4>💰 バリュエーション</h4>
+                        <div class="metric-row">
+                            <span class="metric-label">PER:</span>
+                            <span class="metric-value">${val.per ? val.per.toFixed(2) + '倍' : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">PBR:</span>
+                            <span class="metric-value">${val.pbr ? val.pbr.toFixed(2) + '倍' : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">PER評価:</span>
+                            <span class="metric-value ${getRatingClass(val.per_rating)}">${val.per_rating}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">PBR評価:</span>
+                            <span class="metric-value ${getRatingClass(val.pbr_rating)}">${val.pbr_rating}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">総合評価:</span>
+                            <span class="metric-value ${getRatingClass(val.overall_rating)}">${val.overall_rating}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">時価総額:</span>
+                            <span class="metric-value">${val.market_cap_billion ? val.market_cap_billion.toFixed(0) + '兆円' : 'データなし'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 適正株価分析
+            if (fundamental.fair_value && fundamental.fair_value.fair_values) {
+                const fv = fundamental.fair_value;
+                html += `
+                    <div class="analysis-card">
+                        <h4>🎯 適正株価</h4>
+                `;
+                
+                if (fv.fair_values.per_based) {
+                    html += `
+                        <div class="metric-row">
+                            <span class="metric-label">PERベース:</span>
+                            <span class="metric-value">${fv.fair_values.per_based.toFixed(0)}円</span>
+                        </div>
+                    `;
+                }
+                
+                if (fv.fair_values.pbr_based) {
+                    html += `
+                        <div class="metric-row">
+                            <span class="metric-label">PBRベース:</span>
+                            <span class="metric-value">${fv.fair_values.pbr_based.toFixed(0)}円</span>
+                        </div>
+                    `;
+                }
+                
+                if (fv.fair_values.average) {
+                    const upside = fv.price_comparison.average_upside;
+                    html += `
+                        <div class="metric-row">
+                            <span class="metric-label">平均適正株価:</span>
+                            <span class="metric-value">${fv.fair_values.average.toFixed(0)}円</span>
+                        </div>
+                        ${upside ? `
+                        <div class="metric-row">
+                            <span class="metric-label">上昇余地:</span>
+                            <span class="metric-value ${upside > 0 ? 'rating-positive' : 'rating-negative'}">${upside > 0 ? '+' : ''}${upside.toFixed(1)}%</span>
+                        </div>
+                        ` : ''}
+                    `;
+                }
+                
+                html += `</div>`;
+            }
+            
+            // 配当分析
+            if (fundamental.dividend) {
+                const div = fundamental.dividend;
+                html += `
+                    <div class="analysis-card">
+                        <h4>💎 配当分析</h4>
+                        <div class="metric-row">
+                            <span class="metric-label">配当利回り:</span>
+                            <span class="metric-value">${div.dividend_yield ? div.dividend_yield.toFixed(2) + '%' : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">配当評価:</span>
+                            <span class="metric-value ${getRatingClass(div.yield_rating)}">${div.yield_rating}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">配当性向:</span>
+                            <span class="metric-value">${div.payout_ratio ? div.payout_ratio.toFixed(1) + '%' : 'データなし'}</span>
+                        </div>
+                        ${div.dividend_growth ? `
+                        <div class="metric-row">
+                            <span class="metric-label">配当成長率:</span>
+                            <span class="metric-value ${div.dividend_growth > 0 ? 'rating-positive' : 'rating-negative'}">${div.dividend_growth > 0 ? '+' : ''}${div.dividend_growth}%</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // 財務健全性
+            if (fundamental.financial) {
+                const fin = fundamental.financial;
+                html += `
+                    <div class="analysis-card">
+                        <h4>🏦 財務健全性</h4>
+                        <div class="metric-row">
+                            <span class="metric-label">ROE:</span>
+                            <span class="metric-value">${fin.roe ? fin.roe.toFixed(1) + '%' : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">負債比率:</span>
+                            <span class="metric-value">${fin.debt_to_equity ? fin.debt_to_equity.toFixed(2) : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">営業利益率:</span>
+                            <span class="metric-value">${fin.operating_margin ? fin.operating_margin.toFixed(1) + '%' : 'データなし'}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">財務スコア:</span>
+                            <span class="metric-value">${fin.financial_score}/100</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">財務評価:</span>
+                            <span class="metric-value ${getRatingClass(fin.financial_rating)}">${fin.financial_rating}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>'; // analysis-grid終了
+            
+            // 投資判断
+            if (fundamental.investment_advice) {
+                const advice = fundamental.investment_advice;
+                html += `
+                    <div class="investment-advice">
+                        <div class="advice-recommendation ${getRatingClass(advice.recommendation)}">
+                            🎯 投資判断: ${advice.recommendation}
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">総合スコア:</span>
+                            <span class="metric-value">${fundamental.total_score}/100</span>
+                        </div>
+                `;
+                
+                if (advice.reasoning && advice.reasoning.length > 0) {
+                    html += `
+                        <div class="advice-list">
+                            <strong>📈 ポジティブ要因:</strong>
+                            <ul>
+                                ${advice.reasoning.map(reason => `<li>${reason}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                if (advice.risks && advice.risks.length > 0) {
+                    html += `
+                        <div class="advice-list">
+                            <strong>⚠️ リスク要因:</strong>
+                            <ul>
+                                ${advice.risks.map(risk => `<li>${risk}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                if (advice.opportunities && advice.opportunities.length > 0) {
+                    html += `
+                        <div class="advice-list">
+                            <strong>🚀 投資機会:</strong>
+                            <ul>
+                                ${advice.opportunities.map(opp => `<li>${opp}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+            
+            html += `<p style="text-align: right; color: #666; font-size: 12px;">分析日時: ${fundamental.analysis_date}</p>`;
+            
+            fundamentalDiv.innerHTML = html;
+        }
+        
+        function getRatingClass(rating) {
+            if (!rating) return '';
+            
+            const positiveRatings = ['割安', 'やや割安', '良好', '優秀', '買い推奨', 'やや買い', '高い', '適正'];
+            const negativeRatings = ['割高', 'やや割高', '注意', '危険', '売り推奨', 'やや売り', '低い'];
+            
+            if (positiveRatings.some(r => rating.includes(r))) {
+                return 'rating-positive';
+            } else if (negativeRatings.some(r => rating.includes(r))) {
+                return 'rating-negative';
+            } else {
+                return 'rating-neutral';
+            }
+        }
+        
+        function showTab(tabId) {
+            // すべてのタブとコンテンツを非表示
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 選択されたタブとコンテンツを表示
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // ポートフォリオタブが表示されたときにデータをロード
+            if (tabId === 'portfolio-tab' && typeof loadPortfolioData === 'function') {
+                loadPortfolioData();
+            }
+        }
+        
+        // メモデータのローカルストレージ管理
+        const MEMO_STORAGE_KEY = 'stock_analysis_memo_data';
+        
+        // メモデータを保存
+        function saveMemoData() {
+            const memoData = [];
+            const rows = document.querySelectorAll('.memo-table tbody tr');
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const ticker = inputs[0].value.trim();
+                const name = inputs[1].value.trim();
+                const memo = inputs[2].value.trim();
+                
+                if (ticker || name || memo) {
+                    memoData.push({
+                        ticker: ticker,
+                        name: name,
+                        memo: memo
+                    });
+                }
+            });
+            
+            try {
+                localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memoData));
+                updateMemoStatus('メモデータを保存しました', true);
+                console.log('メモデータ保存完了:', memoData);
+            } catch (error) {
+                console.error('メモデータ保存エラー:', error);
+                updateMemoStatus('保存エラーが発生しました', false);
+            }
+        }
+        
+        // メモデータを読み込み
+        function loadMemoData() {
+            try {
+                const savedData = localStorage.getItem(MEMO_STORAGE_KEY);
+                if (savedData) {
+                    const memoData = JSON.parse(savedData);
+                    const rows = document.querySelectorAll('.memo-table tbody tr');
+                    
+                    // データをテーブルに復元
+                    memoData.forEach((item, index) => {
+                        if (index < rows.length) {
+                            const inputs = rows[index].querySelectorAll('input');
+                            inputs[0].value = item.ticker || '';
+                            inputs[1].value = item.name || '';
+                            inputs[2].value = item.memo || '';
+                        }
+                    });
+                    
+                    updateMemoStatus(`${memoData.length}件のメモデータを読み込みました`, true);
+                    console.log('メモデータ読み込み完了:', memoData);
+                } else {
+                    updateMemoStatus('保存されたメモデータはありません', false);
+                }
+            } catch (error) {
+                console.error('メモデータ読み込みエラー:', error);
+                updateMemoStatus('読み込みエラーが発生しました', false);
+            }
+        }
+        
+        // ステータス表示を更新
+        function updateMemoStatus(message, isSuccess) {
+            const statusElement = document.getElementById('memo-status');
+            statusElement.textContent = message;
+            statusElement.className = isSuccess ? 'memo-status saved' : 'memo-status';
+            
+            // 3秒後にメッセージをクリア
+            setTimeout(() => {
+                statusElement.textContent = '';
+            }, 3000);
+        }
+        
+        // 入力フィールドに変更イベントリスナーを追加
+        function addMemoEventListeners() {
+            const inputs = document.querySelectorAll('.memo-table input');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    // 少し遅延させてから保存（連続入力時のパフォーマンス対策）
+                    clearTimeout(input.saveTimeout);
+                    input.saveTimeout = setTimeout(saveMemoData, 500);
+                });
+            });
+        }
+        
+        // ページ読み込み時の処理
+        // バックテスト関連の関数
+        async function runBacktest() {
+            console.log('バックテスト開始');
+            
+            const ticker = document.getElementById('ticker').value.trim();
+            const startDate = document.getElementById('backtest-start-date').value;
+            const endDate = document.getElementById('backtest-end-date').value;
+            const strategy = document.getElementById('strategy-select').value;
+            const initialCapital = parseInt(document.getElementById('initial-capital').value);
+            
+            console.log('設定値:', { ticker, startDate, endDate, strategy, initialCapital });
+            
+            if (!ticker) {
+                alert('銘柄コードを入力してください');
+                return;
+            }
+            
+            if (!startDate || !endDate) {
+                alert('期間を選択してください');
+                return;
+            }
+            
+            const loadingElement = document.getElementById('backtest-loading');
+            const resultsElement = document.getElementById('backtest-results');
+            
+            console.log('UI要素確認:', { 
+                loading: !!loadingElement, 
+                results: !!resultsElement 
+            });
+            
+            loadingElement.style.display = 'block';
+            resultsElement.style.display = 'none';
+            
+            try {
+                console.log('APIリクエスト送信中...');
+                
+                const requestBody = {
+                    ticker: ticker,
+                    start_date: startDate,
+                    end_date: endDate,
+                    strategy: strategy,
+                    initial_capital: initialCapital
+                };
+                
+                console.log('リクエストボディ:', requestBody);
+                
+                const response = await fetch('/backtest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('レスポンス受信:', response.status, response.statusText);
+                
+                const data = await response.json();
+                console.log('レスポンスデータ:', data);
+                
+                if (data.success) {
+                    console.log('バックテスト成功、結果表示開始');
+                    displayBacktestResults(data.data);
+                } else {
+                    console.error('バックテスト失敗:', data.error);
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('バックテストエラー:', error);
+                alert('バックテストの実行中にエラーが発生しました: ' + error.message);
+            } finally {
+                console.log('ローディング表示を非表示');
+                loadingElement.style.display = 'none';
+            }
+        }
+        
+        function displayBacktestResults(data) {
+            console.log('結果表示開始, データ:', data);
+            
+            const resultsElement = document.getElementById('backtest-results');
+            if (!resultsElement) {
+                console.error('結果表示要素が見つかりません');
+                return;
+            }
+            
+            console.log('結果要素を表示');
+            resultsElement.style.display = 'block';
+            
+            try {
+                // パフォーマンスサマリーを表示
+                console.log('パフォーマンスサマリー表示');
+                displayPerformanceSummary(data.backtest_result);
+                
+                // チャートを表示
+                console.log('チャート表示');
+                displayBacktestChart(data.chart_data);
+                
+                // 取引履歴を表示
+                console.log('取引履歴表示');
+                displayTradesList(data.trades);
+                
+                // 詳細指標を表示
+                console.log('詳細指標表示');
+                displayDetailedMetrics(data.detailed_metrics);
+                
+                // ストラテジーパラメータを表示
+                console.log('ストラテジーパラメータ表示');
+                displayStrategyParams(data.strategy_info);
+                
+                console.log('すべての結果表示完了');
+            } catch (error) {
+                console.error('結果表示中にエラー:', error);
+            }
+        }
+        
+        function displayPerformanceSummary(performance) {
+            console.log('パフォーマンスサマリー関数開始, データ:', performance);
+            const container = document.getElementById('performance-summary');
+            
+            if (!container) {
+                console.error('performance-summary要素が見つかりません');
+                return;
+            }
+            
+            const cards = [
+                {
+                    title: '総リターン',
+                    value: (performance.performance.total_return_pct ?? 0).toFixed(2) + '%',
+                    type: (performance.performance.total_return_pct ?? 0) > 0 ? 'positive' : 'negative'
+                },
+                {
+                    title: '取引回数',
+                    value: performance.performance.total_trades,
+                    type: 'neutral'
+                },
+                {
+                    title: '勝率',
+                    value: (performance.performance.win_rate ?? 0).toFixed(1) + '%',
+                    type: (performance.performance.win_rate ?? 0) > 50 ? 'positive' : 'negative'
+                },
+                {
+                    title: 'シャープレシオ',
+                    value: performance.risk_metrics.sharpe_ratio?.toFixed(2) || 'N/A',
+                    type: (performance.risk_metrics.sharpe_ratio || 0) > 1 ? 'positive' : 'negative'
+                },
+                {
+                    title: '最大ドローダウン',
+                    value: (performance.risk_metrics.max_drawdown ?? 0).toFixed(2) + '%',
+                    type: 'negative'
+                },
+                {
+                    title: 'バイ&ホールド比較',
+                    value: (performance.market_comparison.alpha ?? 0).toFixed(2) + '%',
+                    type: (performance.market_comparison.alpha ?? 0) > 0 ? 'positive' : 'negative'
+                }
+            ];
+            
+            container.innerHTML = cards.map(card => `
+                <div class="performance-card">
+                    <h4>${card.title}</h4>
+                    <div class="value ${card.type}">${card.value}</div>
+                </div>
+            `).join('');
+            
+            // 総合評価を表示
+            try {
+                console.log('総合評価計算開始');
+                const overallRating = calculateOverallRating(performance);
+                console.log('総合評価結果:', overallRating);
+                
+                const ratingContainer = document.getElementById('overall-rating');
+                if (ratingContainer) {
+                    ratingContainer.className = `overall-rating ${overallRating.ratingClass}`;
+                    ratingContainer.innerHTML = `
+                        <div>🏆 総合評価: ${overallRating.rating}</div>
+                        <div style="font-size: 14px; margin-top: 8px; font-weight: normal;">${overallRating.message}</div>
+                        <div style="font-size: 12px; margin-top: 8px; font-weight: normal;">
+                            ${overallRating.factors.length > 0 ? '評価要因: ' + overallRating.factors.join('、') : ''}
+                        </div>
+                    `;
+                    console.log('総合評価表示完了');
+                } else {
+                    console.error('overall-rating要素が見つかりません');
+                }
+            } catch (error) {
+                console.error('総合評価表示でエラー:', error);
+            }
+        }
+        
+        function displayBacktestChart(chartData) {
+            try {
+                console.log('チャート描画開始, データ:', chartData);
+                
+                if (!chartData || !chartData.dates || !chartData.prices) {
+                    console.error('チャートデータが不正です:', chartData);
+                    return;
+                }
+                
+                const trace1 = {
+                    x: chartData.dates,
+                    y: chartData.prices,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '株価',
+                    line: { color: '#3b82f6', width: 2 }
+                };
+                
+                const buyTrace = {
+                    x: chartData.signals?.buy_dates || [],
+                    y: chartData.signals?.buy_prices || [],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: '買いシグナル',
+                    marker: { color: '#10b981', size: 8, symbol: 'triangle-up' }
+                };
+                
+                const sellTrace = {
+                    x: chartData.signals?.sell_dates || [],
+                    y: chartData.signals?.sell_prices || [],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: '売りシグナル',
+                    marker: { color: '#ef4444', size: 8, symbol: 'triangle-down' }
+                };
+                
+                const layout = {
+                    title: 'バックテスト結果',
+                    xaxis: { title: '日付' },
+                    yaxis: { title: '価格 (円)' },
+                    plot_bgcolor: '#ffffff',
+                    paper_bgcolor: '#ffffff',
+                    font: { color: '#1e293b' },
+                    showlegend: true
+                };
+                
+                console.log('Plotlyでチャート描画中');
+                Plotly.newPlot('backtest-chart', [trace1, buyTrace, sellTrace], layout, {responsive: true});
+                console.log('チャート描画完了');
+            } catch (error) {
+                console.error('チャート描画でエラー:', error);
+            }
+        }
+        
+        function displayTradesList(trades) {
+            const container = document.getElementById('trades-table');
+            
+            if (!trades || trades.length === 0) {
+                container.innerHTML = '<p>取引履歴がありません</p>';
+                return;
+            }
+            
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>エントリー日</th>
+                            <th>エグジット日</th>
+                            <th>エントリー価格</th>
+                            <th>エグジット価格</th>
+                            <th>損益</th>
+                            <th>損益率</th>
+                            <th>保有日数</th>
+                            <th>理由</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trades.map(trade => `
+                            <tr>
+                                <td>${trade.entry_date}</td>
+                                <td>${trade.exit_date}</td>
+                                <td>¥${trade.entry_price.toLocaleString()}</td>
+                                <td>¥${trade.exit_price.toLocaleString()}</td>
+                                <td class="${trade.profit_loss > 0 ? 'profit' : 'loss'}">
+                                    ¥${trade.profit_loss.toLocaleString()}
+                                </td>
+                                <td class="${trade.profit_loss_pct > 0 ? 'profit' : 'loss'}">
+                                    ${trade.profit_loss_pct.toFixed(2)}%
+                                </td>
+                                <td>${trade.holding_days}日</td>
+                                <td>${trade.entry_reason} → ${trade.exit_reason}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+        
+        function displayDetailedMetrics(metrics) {
+            const container = document.getElementById('detailed-metrics');
+            
+            const groups = [
+                {
+                    title: '基本統計',
+                    data: metrics.basic_stats,
+                    format: {
+                        total_return: (v) => `¥${v.toLocaleString()}`,
+                        total_return_pct: (v) => `${v.toFixed(2)}%`,
+                        win_rate: (v) => `${v.toFixed(1)}%`,
+                        avg_return_per_trade: (v) => `¥${v.toLocaleString()}`,
+                        avg_holding_days: (v) => `${v.toFixed(1)}日`
+                    }
+                },
+                {
+                    title: 'リスク指標',
+                    data: metrics.risk_metrics,
+                    format: {
+                        max_drawdown: (v) => `${v.toFixed(2)}%`,
+                        volatility: (v) => `${v.toFixed(2)}%`,
+                        sharpe_ratio: (v) => v.toFixed(2),
+                        sortino_ratio: (v) => v.toFixed(2),
+                        var_95: (v) => `${v.toFixed(2)}%`
+                    }
+                },
+                {
+                    title: '収益性指標',
+                    data: metrics.profitability_metrics,
+                    format: {
+                        gross_profit: (v) => `¥${v.toLocaleString()}`,
+                        gross_loss: (v) => `¥${v.toLocaleString()}`,
+                        profit_factor: (v) => v.toFixed(2),
+                        payoff_ratio: (v) => v.toFixed(2),
+                        expectancy: (v) => `¥${v.toLocaleString()}`
+                    }
+                }
+            ];
+            
+            container.innerHTML = groups.map(group => `
+                <div class="metric-group">
+                    <h4>${group.title}</h4>
+                    ${Object.entries(group.data || {}).map(([key, value]) => {
+                        const formatter = group.format[key] || ((v) => v);
+                        const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        return `
+                            <div class="metric-item">
+                                <span class="metric-label">${displayKey}</span>
+                                <span class="metric-value">${formatter(value)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `).join('');
+        }
+        
+        function displayStrategyParams(strategyInfo) {
+            const container = document.getElementById('strategy-parameters');
+            
+            container.innerHTML = `
+                <div class="metric-group">
+                    <h4>${strategyInfo.name}</h4>
+                    <p style="margin-bottom: 15px; color: #64748b;">${strategyInfo.description}</p>
+                    ${Object.entries(strategyInfo.params).map(([key, value]) => {
+                        const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        return `
+                            <div class="metric-item">
+                                <span class="metric-label">${displayKey}</span>
+                                <span class="metric-value">${value}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        function showSubTab(tabId) {
+            // すべてのサブタブとコンテンツを非表示
+            document.querySelectorAll('.tab-sub').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.sub-tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 選択されたタブとコンテンツを表示
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        // Portfolio Management Functions
+        function showPortfolioTab(tabId) {
+            // すべてのポートフォリオタブとコンテンツを非表示
+            document.querySelectorAll('.portfolio-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.portfolio-tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 選択されたタブとコンテンツを表示
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // タブが表示されたときにデータをロード
+            if (tabId === 'portfolio-holdings') {
+                loadPortfolioData();
+            } else if (tabId === 'watchlist') {
+                loadWatchlistData();
+            } else if (tabId === 'notes') {
+                loadNotesData();
+            } else if (tabId === 'history') {
+                loadHistoryData();
+            }
+        }
+        
+        async function loadPortfolioData() {
+            try {
+                const response = await fetch('/api/portfolio/portfolio');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPortfolioData(result.data.portfolio);
+                    updatePortfolioSummary(result.data.summary);
+                } else {
+                    console.error('Portfolio data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load portfolio data:', error);
+            }
+        }
+        
+        function displayPortfolioData(portfolio) {
+            const tbody = document.getElementById('portfolio-tbody');
+            
+            if (!portfolio || portfolio.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #64748b; padding: 20px;">
+                            ポートフォリオに銘柄がありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = portfolio.map(item => {
+                const profitLoss = item.profit_loss || 0;
+                const profitLossPct = item.profit_loss_pct || 0;
+                const profitClass = profitLoss >= 0 ? 'profit' : 'loss';
+                
+                return `
+                    <tr>
+                        <td>${item.ticker}</td>
+                        <td>${item.company_name || ''}</td>
+                        <td>${(item.shares || 0).toLocaleString()}</td>
+                        <td>￥${(item.average_price || 0).toLocaleString()}</td>
+                        <td>￥${(item.current_price || 0).toLocaleString()}</td>
+                        <td class="${profitClass}">￥${profitLoss.toLocaleString()}</td>
+                        <td class="${profitClass}">${profitLossPct.toFixed(2)}%</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="removeFromPortfolio(${item.id})">削除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function updatePortfolioSummary(summary) {
+            document.getElementById('total-stocks').textContent = summary.total_stocks || 0;
+            document.getElementById('total-investment').textContent = `￥${(summary.total_investment || 0).toLocaleString()}`;
+            document.getElementById('current-value').textContent = `￥${(summary.current_value || 0).toLocaleString()}`;
+            
+            const profitLoss = summary.total_profit_loss || 0;
+            const profitLossPct = summary.total_profit_loss_pct || 0;
+            const profitClass = profitLoss >= 0 ? 'positive' : 'negative';
+            
+            const profitLossElement = document.getElementById('total-profit-loss');
+            const profitLossPctElement = document.getElementById('total-profit-loss-pct');
+            
+            profitLossElement.textContent = `￥${profitLoss.toLocaleString()}`;
+            profitLossElement.className = `value ${profitClass}`;
+            
+            profitLossPctElement.textContent = `${profitLossPct.toFixed(2)}%`;
+            profitLossPctElement.className = `value ${profitClass}`;
+        }
+        
+        async function loadWatchlistData() {
+            try {
+                const response = await fetch('/api/portfolio/watchlist');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayWatchlistData(result.data);
+                } else {
+                    console.error('Watchlist data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load watchlist data:', error);
+            }
+        }
+        
+        function displayWatchlistData(watchlist) {
+            const tbody = document.getElementById('watchlist-tbody');
+            
+            if (!watchlist || watchlist.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">
+                            ウォッチリストに銘柄がありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = watchlist.map(item => {
+                const targetPrice = item.target_price ? `￥${item.target_price.toLocaleString()}` : '-';
+                const alertEnabled = item.alert_enabled ? '✅' : '❌';
+                const dateAdded = new Date(item.date_added).toLocaleDateString('ja-JP');
+                
+                return `
+                    <tr>
+                        <td>${item.ticker}</td>
+                        <td>${item.company_name || ''}</td>
+                        <td>${targetPrice}</td>
+                        <td>${alertEnabled}</td>
+                        <td>${dateAdded}</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="removeFromWatchlist(${item.id})">削除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function loadNotesData() {
+            try {
+                const response = await fetch('/api/portfolio/notes');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayNotesData(result.data);
+                } else {
+                    console.error('Notes data load error:', result.error);
+                }
+            } catch (error) {
+                console.error('Failed to load notes data:', error);
+            }
+        }
+        
+        function displayNotesData(notes) {
+            const container = document.getElementById('notes-container');
+            
+            if (!notes || notes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        メモがありません
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notes.map(note => {
+                const dateCreated = new Date(note.date_created).toLocaleDateString('ja-JP');
+                const noteTypeColors = {
+                    'general': '#6b7280',
+                    'analysis': '#3b82f6',
+                    'strategy': '#10b981',
+                    'risk': '#ef4444',
+                    'news': '#f59e0b'
+                };
+                const typeColor = noteTypeColors[note.note_type] || '#6b7280';
+                
+                return `
+                    <div class="note-item">
+                        <div class="note-header">
+                            <div>
+                                <div class="note-title">${note.title}</div>
+                                <div class="note-meta">
+                                    ${note.ticker} | 
+                                    <span style="color: ${typeColor}; font-weight: bold;">${note.note_type}</span> | 
+                                    ${dateCreated}
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" style="font-size: 10px; padding: 4px 8px;" 
+                                    onclick="archiveNote(${note.id})">削除</button>
+                        </div>
+                        <div class="note-content">${note.content}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadHistoryData() {
+            try {
+                const [analysisResponse, backtestResponse] = await Promise.all([
+                    fetch('/api/portfolio/analysis-history?limit=20'),
+                    fetch('/api/portfolio/backtest-history?limit=20')
+                ]);
+                
+                const analysisResult = await analysisResponse.json();
+                const backtestResult = await backtestResponse.json();
+                
+                const allHistory = [];
+                
+                if (analysisResult.success) {
+                    allHistory.push(...analysisResult.data.map(item => ({...item, type: 'analysis'})));
+                }
+                
+                if (backtestResult.success) {
+                    allHistory.push(...backtestResult.data.map(item => ({...item, type: 'backtest'})));
+                }
+                
+                // 日付でソート
+                allHistory.sort((a, b) => new Date(b.date_created) - new Date(a.date_created));
+                
+                displayHistoryData(allHistory);
+                
+            } catch (error) {
+                console.error('Failed to load history data:', error);
+            }
+        }
+        
+        function displayHistoryData(history) {
+            const container = document.getElementById('history-container');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        履歴データがありません
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = history.map(item => {
+                const dateCreated = new Date(item.date_created).toLocaleDateString('ja-JP');
+                let typeLabel = '';
+                let summary = '';
+                
+                if (item.type === 'analysis') {
+                    typeLabel = item.analysis_type === 'technical' ? 'Technical' : 'Fundamental';
+                    summary = `${item.ticker} - ${item.analysis_type} analysis`;
+                } else if (item.type === 'backtest') {
+                    typeLabel = 'Backtest';
+                    const returnPct = item.total_return_pct || 0;
+                    summary = `${item.ticker} - ${item.strategy_name} (${returnPct.toFixed(2)}%)`;
+                }
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <div>
+                                <span class="history-type ${item.analysis_type || 'backtest'}">${typeLabel}</span>
+                                <strong>${summary}</strong>
+                            </div>
+                            <div class="note-meta">${dateCreated}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Form handling functions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Portfolio form
+            document.getElementById('add-to-portfolio-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('add-ticker').value;
+                const shares = parseInt(document.getElementById('add-shares').value);
+                const price = parseFloat(document.getElementById('add-price').value);
+                const notes = document.getElementById('add-notes').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/portfolio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            shares: shares,
+                            average_price: price,
+                            notes: notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('ポートフォリオに追加しました');
+                        clearAddForm();
+                        loadPortfolioData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Watchlist form
+            document.getElementById('add-to-watchlist-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('watch-ticker').value;
+                const targetPrice = parseFloat(document.getElementById('watch-target-price').value) || null;
+                const notes = document.getElementById('watch-notes').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/watchlist', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            target_price: targetPrice,
+                            notes: notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('ウォッチリストに追加しました');
+                        clearWatchForm();
+                        loadWatchlistData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Notes form
+            document.getElementById('add-note-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ticker = document.getElementById('note-ticker').value;
+                const title = document.getElementById('note-title').value;
+                const noteType = document.getElementById('note-type').value;
+                const content = document.getElementById('note-content').value;
+                
+                try {
+                    const response = await fetch('/api/portfolio/notes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: ticker,
+                            title: title,
+                            note_type: noteType,
+                            content: content
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('メモを保存しました');
+                        clearNoteForm();
+                        loadNotesData();
+                    } else {
+                        alert('エラー: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('通信エラーが発生しました');
+                    console.error(error);
+                }
+            });
+            
+            // Load portfolio data on page load if portfolio tab is active
+            if (document.getElementById('portfolio-tab').classList.contains('active')) {
+                loadPortfolioData();
+            }
+        });
+        
+        function clearAddForm() {
+            document.getElementById('add-ticker').value = '';
+            document.getElementById('add-shares').value = '';
+            document.getElementById('add-price').value = '';
+            document.getElementById('add-notes').value = '';
+        }
+        
+        function clearWatchForm() {
+            document.getElementById('watch-ticker').value = '';
+            document.getElementById('watch-target-price').value = '';
+            document.getElementById('watch-notes').value = '';
+        }
+        
+        function clearNoteForm() {
+            document.getElementById('note-ticker').value = '';
+            document.getElementById('note-title').value = '';
+            document.getElementById('note-type').value = 'general';
+            document.getElementById('note-content').value = '';
+        }
+        
+        async function removeFromPortfolio(portfolioId) {
+            if (!confirm('この銘柄をポートフォリオから削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/portfolio/${portfolioId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadPortfolioData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
+        }
+        
+        async function removeFromWatchlist(watchlistId) {
+            if (!confirm('この銘柄をウォッチリストから削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/watchlist/${watchlistId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadWatchlistData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
+        }
+        
+        async function archiveNote(noteId) {
+            if (!confirm('このメモを削除しますか？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/portfolio/notes/${noteId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('削除しました');
+                    loadNotesData();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('通信エラーが発生しました');
+                console.error(error);
+            }
+        }
+        
+        // 新しいバックテストUI用関数
+        function setPresetPeriod(days) {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - days);
+            
+            document.getElementById('backtest-end-date').value = endDate.toISOString().split('T')[0];
+            document.getElementById('backtest-start-date').value = startDate.toISOString().split('T')[0];
+        }
+        
+        function setCapital(amount) {
+            document.getElementById('initial-capital').value = amount;
+        }
+        
+        function showStrategyDescription() {
+            const strategySelect = document.getElementById('strategy-select');
+            const descriptionDiv = document.getElementById('strategy-description');
+            
+            const descriptions = {
+                'combo': '<strong>複合戦略:</strong> RSI、移動平均線、MACD、ボリンジャーバンドを組み合わせた総合的な判定を行います。複数の指標を使うことでより精度の高い売買タイミングを狙います。（初心者におすすめ）',
+                'rsi': '<strong>RSI戦略:</strong> RSIが30以下で買い、70以上で売りの逆張り戦略。短期的な買われすぎ・売られすぎを狙います。シンプルですが相場によっては有効です。',
+                'golden_cross': '<strong>ゴールデンクロス戦略:</strong> 25日移動平均線が75日移動平均線を上抜けたら買い、下抜けたら売りの順張り戦略。トレンドの転換点を捉えます。',
+                'macd': '<strong>MACD戦略:</strong> MACDとシグナル線のクロスで売買判断を行います。トレンドの勢いと転換点を同時に判断できる優れた指標です。',
+                'bollinger': '<strong>ボリンジャーバンド戦略:</strong> 価格がバンドの上限に達したら売り、下限に達したら買いの逆張り戦略。統計的な価格の異常値を狙います。'
+            };
+            
+            descriptionDiv.innerHTML = descriptions[strategySelect.value] || '';
+        }
+        
+        function toggleResultsGuide() {
+            const guide = document.getElementById('results-guide');
+            const icon = document.getElementById('guide-toggle-icon');
+            
+            if (guide.style.display === 'none') {
+                guide.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                guide.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function calculateOverallRating(performance) {
+            const basic = performance.performance || {};
+            const risk = performance.risk_metrics || {};
+            const market = performance.market_comparison || {};
+            
+            let score = 0;
+            let factors = [];
+            
+            // 総リターンの評価
+            const totalReturn = basic.total_return_pct || 0;
+            if (totalReturn > 20) {
+                score += 3;
+                factors.push('高リターン');
+            } else if (totalReturn > 10) {
+                score += 2;
+                factors.push('良好なリターン');
+            } else if (totalReturn > 0) {
+                score += 1;
+                factors.push('プラスリターン');
+            } else {
+                factors.push('マイナスリターン');
+            }
+            
+            // 勝率の評価
+            const winRate = basic.win_rate || 0;
+            if (winRate >= 70) {
+                score += 3;
+                factors.push('高勝率');
+            } else if (winRate >= 50) {
+                score += 2;
+                factors.push('良好な勝率');
+            } else if (winRate >= 30) {
+                score += 1;
+            }
+            
+            // 最大ドローダウンの評価
+            const maxDrawdown = risk.max_drawdown || 0;
+            if (maxDrawdown <= 5) {
+                score += 3;
+                factors.push('低リスク');
+            } else if (maxDrawdown <= 10) {
+                score += 2;
+                factors.push('適度なリスク');
+            } else if (maxDrawdown <= 20) {
+                score += 1;
+            } else {
+                factors.push('高リスク');
+            }
+            
+            // シャープレシオの評価
+            const sharpeRatio = risk.sharpe_ratio || 0;
+            if (sharpeRatio >= 2) {
+                score += 3;
+                factors.push('優秀なリスク効率');
+            } else if (sharpeRatio >= 1) {
+                score += 2;
+                factors.push('良好なリスク効率');
+            } else if (sharpeRatio >= 0.5) {
+                score += 1;
+            }
+            
+            // バイ&ホールド比較
+            const alpha = market.alpha || 0;
+            if (alpha > 5) {
+                score += 2;
+                factors.push('市場を大幅に上回る');
+            } else if (alpha > 0) {
+                score += 1;
+                factors.push('市場を上回る');
+            }
+            
+            // 評価判定
+            let rating, ratingClass, message;
+            if (score >= 10) {
+                rating = '優秀';
+                ratingClass = 'excellent';
+                message = 'この戦略は非常に優秀な結果を示しています！';
+            } else if (score >= 6) {
+                rating = '良好';
+                ratingClass = 'good';
+                message = 'この戦略は良好な結果を示しています。';
+            } else {
+                rating = '要改善';
+                ratingClass = 'poor';
+                message = 'この戦略は改善の余地があります。';
+            }
+            
+            return {
+                rating: rating,
+                ratingClass: ratingClass,
+                message: message,
+                factors: factors,
+                score: score
+            };
+        }
+        
+        // ページ読み込み時の初期化
+        window.addEventListener('load', function() {
+            console.log('ページ読み込み完了');
+            loadMemoData();
+            addMemoEventListeners();
+            
+            // デフォルトの日付を設定（6ヶ月前から現在まで）
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setMonth(endDate.getMonth() - 6);
+            
+            document.getElementById('backtest-end-date').value = endDate.toISOString().split('T')[0];
+            document.getElementById('backtest-start-date').value = startDate.toISOString().split('T')[0];
+            
+            // 戦略説明の初期表示
+            showStrategyDescription();
+        });
+    </script>
+    
+    </div> <!-- /main-content -->
+</body>
+</html>
